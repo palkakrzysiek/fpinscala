@@ -44,10 +44,19 @@ class ListTest extends FlatSpec with Matchers {
     dropWhile(Nil, (i: Int) => i < 3) should be (Nil)
   }
 
-  "List.init" should "should drop the last element of the list" in {
+  "List.init" should "drop the last element of the list" in {
     init(List("a", "b", "c")) should be (List("a", "b"))
     init(List("a")) should be (Nil)
     init(Nil) should be (Nil)
+  }
+
+  "List.foldRight" should "be able to reconstruct the list" in {
+    foldRight(List(1, 2, 3), Nil: List[Int])(Cons(_, _)) should be (List(1, 2, 3))
+  }
+
+  "List.length" should "return the length of the list" in {
+    List.length(List()) should be (0)
+    List.length(List(1, 2, 3)) should be (3)
   }
 
 }
