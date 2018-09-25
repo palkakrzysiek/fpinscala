@@ -59,4 +59,10 @@ class ListTest extends FlatSpec with Matchers {
     List.length(List(1, 2, 3)) should be (3)
   }
 
+  "List.foldLeft" should "apply an operation while folding the list" in {
+    foldLeft(List(1.0, 2.0, 3.0), Nil: List[Double]) { (l, e) =>
+      Cons(e, l)
+    } should be (List(3.0, 2.0, 1.0))
+  }
+
 }
