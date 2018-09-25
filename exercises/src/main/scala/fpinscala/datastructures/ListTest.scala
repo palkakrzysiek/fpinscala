@@ -65,4 +65,28 @@ class ListTest extends FlatSpec with Matchers {
     } should be (List(3.0, 2.0, 1.0))
   }
 
+  "List.append2" should "append the second list to the first" in {
+    append2(List(1, 2), List(3, 4)) should be (List(1, 2, 3, 4))
+  }
+
+  "List.flatten" should "make a single list from a list of lists" in {
+    flatten(List(List(1, 2), List(3, 4), List(5, 6))) should be (List(1, 2, 3, 4, 5, 6))
+  }
+
+  "List.add1" should "add 1 to each integer of the list" in {
+   add1(List(0, 1, 2)) should be (List(1, 2, 3))
+  }
+
+  "List.d2s" should "convert a list of doubles to a list of strings" in {
+    d2s(List(1.0, 2.0, 3.0)) should be (List("1.0", "2.0", "3.0"))
+  }
+
+  "List.map" should "apply a function on each element of the list" in {
+    map(List(1.0, 2.0, 3.0))(_.toString) should be (List("1.0", "2.0", "3.0"))
+  }
+
+  "List.filter" should "remove all the elements not matching the predicate" in {
+    filter(List(1, 2, 3, 4))(_ % 2 == 0) should be (List(2, 4))
+  }
+
 }

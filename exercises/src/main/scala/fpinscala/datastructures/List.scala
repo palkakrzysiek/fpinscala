@@ -91,5 +91,17 @@ object List { // `List` companion object. Contains functions for creating and wo
     case Cons(h, t) => foldLeft(t, f(z, h))(f)
   }
 
-  def map[A, B](l: List[A])(f: A => B): List[B] = ???
+  def append2[A](l1: List[A], l2: List[A]): List[A] = foldRight(l1, l2)((l1h, acc) => Cons(l1h, acc))
+
+  def flatten[A](ls: List[List[A]]): List[A] = foldRight(ls, Nil: List[A])(append)
+
+  def add1(l: List[Int]): List[Int] = foldRight(l, Nil: List[Int])((h, t) => Cons(h + 1, t))
+
+  def d2s(l: List[Double]): List[String] = foldRight(l, Nil: List[String])((h, t) => Cons(h.toString, t))
+
+  def map[A, B](l: List[A])(f: A => B): List[B] = foldRight(l, Nil: List[B])((h, t) => Cons(f(h), t))
+
+  def filter[A](as: List[A])(f: A => Boolean): List[A] = foldRight(as, Nil: List[A]) {
+    (h, t) => if (f(h)) Cons(h, t) else t
+  }
 }
