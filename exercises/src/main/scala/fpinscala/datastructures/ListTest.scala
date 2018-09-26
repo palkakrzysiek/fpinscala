@@ -89,4 +89,21 @@ class ListTest extends FlatSpec with Matchers {
     filter(List(1, 2, 3, 4))(_ % 2 == 0) should be (List(2, 4))
   }
 
+  "List.flatMap" should "flatten the results of function given as the argument" in {
+    flatMap(List(1, 2, 3))(i => List(i, i)) should be (List (1, 1, 2, 2, 3, 3))
+  }
+
+  "List.filterUsingFlatMap" should "remove all the elements not matching the predicate" in {
+    filterUsingFlatMap(List(1, 2, 3, 4))(_ % 2 == 0) should be(List(2, 4))
+  }
+
+  "List.addElements" should "add corresponding elements of 2 lists to each other" in {
+    addElements(List(1,2,3), List(4, 5, 6)) should be (List(5, 7, 9))
+  }
+
+  "List.zipWith" should "apply a given function on subsequent elements of 2 given lists" in {
+    zipWith(List(1, 2, 3), List(4, 5, 6))(_ + _) should be (List(5, 7, 9))
+    zipWith(List(1, 2, 3), List(4, 5, 6))(_ * _) should be (List(4, 10, 18))
+  }
+
 }
