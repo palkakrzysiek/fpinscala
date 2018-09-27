@@ -127,5 +127,25 @@ object List { // `List` companion object. Contains functions for creating and wo
     loop(as, bs, Nil)
   }
 
+  def hasSubsequence[A](sup: List[A], sub: List[A]): Boolean = {
+    /**
+      *
+      * @param rSup remaining sup
+      * @param rSub remaining sub
+      * @param rmSup remaining matching sup
+      * @param rmSub remaining matching sub
+      * @return sup contains sub
+      */
+    @tailrec
+    def loop(rSup: List[A], rSub: List[A], rmSup: List[A], rmSub: List[A]): Boolean = (rSup, rSub, rmSup, rmSub) match {
+      case (_, _, _, Nil) => true
+      case (Nil, _, _, _) => false
+      case (_, _, Cons(irmSuph, irmSupt), Cons(irmSubh, irmSubt)) if irmSuph == irmSubh => loop(rSup, rSub, irmSupt, irmSubt)
+      case (Cons(_, irSupt), _, _, _) => loop(irSupt, rSub, irSupt, sub)
+    }
+
+    loop(sup, sub, sup, sub)
+  }
+
 
 }
