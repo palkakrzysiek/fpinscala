@@ -54,5 +54,53 @@ class OptionTest extends FlatSpecLike with Matchers {
 
   }
 
+  "Option.map2" should "apply the function if 2 given arguments are Some" in {
+    Option.map2(Some(1), Some(2)) {
+      (a, b) => a + ", " + b should be ("1, 2")
+    }
+  }
+
+  it should "return None if the left argument is None" in {
+    Option.map2(None: Option[Int], Some(2)) {
+      (a, b) => a + ", " + b should be (None)
+    }
+  }
+
+  it should "return None if the right argument is None" in {
+    Option.map2(Some(2), None: Option[Int]) {
+      (a, b) => a + ", " + b should be (None)
+    }
+  }
+
+  it should "return None if both arguments are None" in {
+    Option.map2(None: Option[Int], None: Option[Int]) {
+      (a, b) => a + ", " + b should be (None)
+    }
+  }
+
+  "Option.sequence" should "change a list of options to an option of list" in {
+    Option.sequence(List(Some(1), Some(2), Some(3))) should be (Some(List(1, 2, 3)))
+  }
+
+  it should "return None if any element of list is None" in {
+    Option.sequence(List(Some(1), None, Some(3))) should be (None)
+  }
+
+  "Option.traverse" should "combine results of each flatMapping" in {
+    Option.traverse(List(1, 3, 5))(a => if(a % 2 == 1) Some(a) else None) should be (Some(List(1, 3, 5)))
+  }
+
+  it should "combine results of each flatMapping returning None if any of results is None" in {
+    Option.traverse(List(1, 2, 3))(a => if(a % 2 == 1) Some(a) else None) should be (None)
+  }
+
+  "Option.sequenceViaTraverse" should "change a list of options to an option of list" in {
+    Option.sequenceViaTraverse(List(Some(1), Some(2), Some(3))) should be (Some(List(1, 2, 3)))
+  }
+
+  it should "return None if any element of list is None" in {
+    Option.sequenceViaTraverse(List(Some(1), None, Some(3))) should be (None)
+  }
+
 
 }
