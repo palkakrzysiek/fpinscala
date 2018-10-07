@@ -140,4 +140,41 @@ class StreamTest extends FunSuite {
       .flatMap(a => Stream(a.toString)).toList === List("1", "2"))
   }
 
+  test("Stream.constant") {
+    val x = "x"
+    assert(Stream.constant(x).take(5).toList === List(x, x, x, x, x))
+  }
+
+  test("Stream.from") {
+    assert(Stream.from(1).take(3).toList === List(1, 2, 3))
+  }
+
+  test("Stream.fibs") {
+    assert(Stream.fibs().take(7).toList === List(0, 1, 1, 2, 3, 5, 8))
+  }
+
+  test("Stream.unfold") {
+    assert(Stream.unfold(0)(s => Some(s + 1, s + 10)).take(3).toList === List(1,
+      11, 21))
+
+    assert(Stream.unfold(0)(s =>
+      if (s < 2) Some(s, s + 1) else None).take(3).toList === List(0, 1))
+  }
+
+  test("Stream.fibsViaUnfold") {
+    assert(Stream.fibsViaUnfold.take(7).toList === List(0, 1, 1, 2, 3, 5, 8))
+  }
+
+  test("Stream.fromViaUnfold") {
+    assert(Stream.fromViaUnfold(1).take(3).toList === List(1, 2, 3))
+  }
+
+  test("Stream.constantViaUnfold") {
+    val x = "x"
+    assert(Stream.constantViaUnfold(x).take(5).toList === List(x, x, x, x, x))
+  }
+
+  test("Stream.onesViaUnfold") {
+    assert(Stream.onesViaUnfold.take(3).toList === List(1, 1, 1))
+  }
 }
