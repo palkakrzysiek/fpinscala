@@ -177,4 +177,33 @@ class StreamTest extends FunSuite {
   test("Stream.onesViaUnfold") {
     assert(Stream.onesViaUnfold.take(3).toList === List(1, 1, 1))
   }
+
+  test("Stream.mapViaUnfold") {
+    assert(Stream(1, 2, 3).mapViaUnfold(_ + 1).toList === List(2, 3, 4))
+  }
+
+  test("Stream.takeViaUnfold") {
+    assert(Stream(1, 2, 3, 4).takeViaUnfold(2).toList === List(1, 2))
+  }
+
+  test("Stream.takeWhileViaUnfold") {
+    assert(Stream(1, 2, 3, 4)
+      .takeWhileViaFoldRight(_ <= 2).toList === List(1, 2))
+  }
+
+  test("Stream.zip") {
+    assert(Stream(1, 2, 3)
+      .zip(Stream("a", "b")).toList === List((1, "a"), (2, "b")))
+  }
+
+  test("Stream.zipAll") {
+    assert(Stream(1, 2, 3)
+      .zipAll(Stream("a", "b")).toList === List((Some(1), Some("a")),
+      (Some(2), Some("b")), (Some(3), None)))
+  }
+
+  test("Stream.startsWith") {
+    assert(Stream(1, 2, 3).startsWith(Stream(1, 2)) === true)
+    assert(Stream(1, 2, 3).startsWith(Stream(2, 3)) === false)
+  }
 }
