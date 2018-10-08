@@ -1,8 +1,8 @@
 package fpinscala.errorhandling
 
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.{FlatSpec, FunSuite, FunSuiteLike, Matchers}
 
-import scala.{Option => _, Either => _}
+import scala.{Either => _, Option => _}
 
 class EitherTest extends FlatSpec with Matchers {
 
@@ -42,6 +42,11 @@ class EitherTest extends FlatSpec with Matchers {
 
   it should "become Left if the second argument is Left" in {
     Right("b").map2(Left("a"): Either[String, String])(_ + _) should be (Left("a"))
+  }
+
+
+  "Either.traverse" should "apply function on the given list returning Right if every" in {
+    List()
   }
 
 
