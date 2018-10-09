@@ -117,6 +117,11 @@ trait Stream[+A] {
     case _ => true
   }
 
+  def tails: Stream[Stream[A]] = this match {
+    case s @ Cons(_, t) => cons(s, t().tails)
+    case _ => empty
+  }
+
   def takeWhileViaUnfold(p: A => Boolean): Stream[A] = unfold(this) {
     case Cons(h, t) if p(h()) => Some(h(), t())
     case _ => None
