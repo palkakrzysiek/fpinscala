@@ -24,12 +24,6 @@ object RNG {
   def unit[A](a: A): Rand[A] =
     rng => (a, rng)
 
-  def map[A,B](s: Rand[A])(f: A => B): Rand[B] =
-    rng => {
-      val (a, rng2) = s(rng)
-      (f(a), rng2)
-    }
-
   def nonNegativeInt(rng: RNG): (Int, RNG) = rng.nextInt match {
     case (i, r) => (Math.abs(i), r)
   }
@@ -56,9 +50,27 @@ object RNG {
     ((d1, d2, d3), r3)
   }
 
-  def ints(count: Int)(rng: RNG): (List[Int], RNG) = Stream.u
+  def ints(count: Int)(rng: RNG): (List[Int], RNG) = {
+    def go(acc: List[Int], n: Int, rng: RNG): (List[Int], RNG) = {
+      if (n <= 0) (acc, rng)
+      else rng.nextInt match {
+        case (v, rng2) => go(v +: acc, n - 1, rng2)
+      }
+    }
+    go(Nil, count, rng)
+  }
 
-  def map2[A,B,C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] = ???
+  def map[A, B](s: Rand[A])(f: A => B): Rand[B] = rng => s(rng) match {
+    case (a, nextRNG) => (f(a), nextRNG)
+  }
+
+  def doubleViaMap: Rand[Double] = map(nonNegativeInt)(_.toDouble / Int.MaxValue)
+
+//  def map2[A,B,C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] = {
+//    val m1: Rand[B => C] = map(ra)(f.curried)
+//  }
+
+  def intDoubleViaMap2: Rand[(Int, Double)] = map2(int, double)((i, d) => (i, d))
 
   def sequence[A](fs: List[Rand[A]]): Rand[List[A]] = ???
 
