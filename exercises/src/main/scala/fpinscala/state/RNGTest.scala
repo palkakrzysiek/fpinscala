@@ -16,4 +16,14 @@ class RNGTest extends WordSpec with Matchers {
     RNG.doubleViaMap(rng) should be (1.79162249052507E-4,Simple(25214903928L))
   }
 
+  "RNG.intDoubleViaMap2" in {
+    RNG.intDoubleViaMap2(rng) should be ((384748, -0.5360936461947858),Simple
+    (206026503483683L))
+  }
+
+  "RNG.intsViaSequence" in {
+    RNG.intsViaSequence(2)(rng) should be (List(384748, -1151252339), Simple
+    (206026503483683L))
+  }
+
 }
