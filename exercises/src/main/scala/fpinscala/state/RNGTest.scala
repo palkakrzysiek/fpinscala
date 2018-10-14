@@ -26,4 +26,8 @@ class RNGTest extends WordSpec with Matchers {
     (206026503483683L))
   }
 
+  "RNG.nonNegativeLessThanViaFlatMap" in {
+    RNG.nonNegativeLessThanViaFlatMap(100)(rng) should be (48,Simple(25214903928L))
+  }
+
 }
