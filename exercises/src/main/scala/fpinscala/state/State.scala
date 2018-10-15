@@ -103,9 +103,17 @@ object RNG {
     y
   }
 
-  def flatMap[A, B](f: Rand[A])(g: A => Rand[B]): Rand[B] = f(_) match {
+  def flatMap[A, B](f: Rand[A])(g: A => Rand[B]): Rand[B] = rng => f(rng) match {
     case (a, rng2) => g(a)(rng2)
   }
+
+//  def map[A, B](s: Rand[A])(f: A => B): Rand[B] = rng => s(rng) match {
+
+  def mapViaFlatMap[A, B](s: Rand[A])(f: A => B): Rand[B] = flatMap(s)(a =>
+    unit(f(a)))
+
+  def map2ViaFlatMap[A, B, C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C]
+  = flatMap(ra)(a => flatMap(rb)(b => unit(f(a, b))))
 
   def nonNegativeLessThanViaFlatMap(n: Int): Rand[Int] = flatMap(nonNegativeInt)(i => {
     val mod = i % n
@@ -117,14 +125,21 @@ object RNG {
 }
 
 case class State[S, +A](run: S => (A, S)) {
-  def map[B](f: A => B): State[S, B] =
-    ???
+  import State._
+
+  def map[B](f: A => B): State[S, B] = flatMap(a => unit(f(a)))
 
   def map2[B, C](sb: State[S, B])(f: (A, B) => C): State[S, C] =
-    ???
+    for {
+      a <- this
+      b <- sb
+    } yield f(a, b)
+
 
   def flatMap[B](f: A => State[S, B]): State[S, B] =
-    ???
+    State(run(_) match {
+      case (a, nextS) => f(a).run(nextS)
+    })
 }
 
 sealed trait Input
@@ -137,6 +152,8 @@ case class Machine(locked: Boolean, candies: Int, coins: Int)
 
 object State {
   type Rand[A] = State[RNG, A]
+
+  def unit[S, A](a: A): State[S, A] = State(s => (a, s))
 
   def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] = ???
 }
