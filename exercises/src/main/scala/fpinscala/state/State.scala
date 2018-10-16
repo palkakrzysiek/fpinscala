@@ -153,7 +153,12 @@ case class Machine(locked: Boolean, candies: Int, coins: Int)
 object State {
   type Rand[A] = State[RNG, A]
 
-  def unit[S, A](a: A): State[S, A] = State(s => (a, s))
+  def unit[S, A](a: A): State[S, A] = State((s: S) => (a, s))
 
-  def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] = ???
+  def sequence[S, A](sas: List[State[S, A]]): State[S, List[A]] = sas
+    .foldRight(unit[S, List[A]](Nil))((s, ss) => ss.map2(s)((_as, _a) => _a
+      +: _as)).map(_.reverse)
+
+  def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] =
+    inputs.foldLeft(unit)
 }

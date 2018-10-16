@@ -38,4 +38,11 @@ class StateTest extends FunSuite with Matchers {
 
     res.run(0) should be ((0, false), 2)
   }
+
+  test("sequence") {
+    val increase =State[Int, Int](i => (i, i + 1))
+    val res = State.sequence(List.fill(3)(increase))
+
+    res.run(0) should be (List(0, 1, 2), 3)
+  }
 }
