@@ -159,6 +159,5 @@ object State {
     .foldRight(unit[S, List[A]](Nil))((s, ss) => ss.map2(s)((_as, _a) => _a
       +: _as)).map(_.reverse)
 
-  def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] =
-    inputs.foldLeft(unit)
+  def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] = ???
 }

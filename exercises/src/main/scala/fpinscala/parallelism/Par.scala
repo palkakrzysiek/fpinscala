@@ -36,6 +36,8 @@ object Par {
     }
   }
 
+  def lazyUnit[A](a: => A): Par[A] = fork(unit(a))
+
   def map2[A,B,C](a: Par[A], b: Par[B])(f: (A,B) => C): Par[C] = // `map2` doesn't evaluate the call to `f` in a separate logical thread, in accord with our design choice of having `fork` be the sole function in the API for controlling parallelism. We can always do `fork(map2(a,b)(f))` if we want the evaluation of `f` to occur in a separate thread.
     (es: ExecutorService) => {
       val af: Future[A] = a(es)
@@ -49,6 +51,8 @@ object Par {
     es => es.submit(new Callable[A] { 
       def call = a(es).get
     })
+
+  def asyncF[A, B](f: A => B): A => Par[B] = a => lazyUnit(f(a))
 
   def map[A,B](pa: Par[A])(f: A => B): Par[B] = 
     map2(pa, unit(()))((a,_) => f(a))
