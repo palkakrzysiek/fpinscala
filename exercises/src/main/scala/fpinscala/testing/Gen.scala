@@ -25,8 +25,14 @@ object Prop {
 }
 
 case class Gen[A](sample: State[RNG, A]) {
-  def map[A,B](f: A => B): Gen[B] = ???
-  def flatMap[A,B](f: A => Gen[B]): Gen[B] = ???
+  def map[B](f: A => B): Gen[B] = flatMap(a => Gen(State.unit(f(a))))
+  def flatMap[B](f: A => Gen[B]): Gen[B] = Gen(sample.flatMap(a => f(a).sample))
+  def listOfN(size: Gen[Int]): Gen[List[A]] = size.flatMap(s => Gen(State(RNG.sequence(List.fill(s)(sample.run)))))
+  def union(other: Gen[A]): Gen[A] = boolean.flatMap(if(_) this else other)
+  def weighted(thisWeight: Double)(other: Gen[A], otherWeight: Double): Gen[A] = {
+    def isThis(rand: Double) = rand > thisWeight
+    double.map(isThis).flatMap(if(_) this else other)
+  }
 
 }
 
@@ -34,6 +40,7 @@ object Gen {
   def choose(start: Int, stopExclusive: Int): Gen[Int] = Gen(State(RNG.nonNegativeLessThan(stopExclusive-start - 1)).map(start + _))
   def unit[A](a: => A): Gen[A] = Gen(State.unit(a))
   def boolean: Gen[Boolean] = Gen(State(RNG.int).map(_%2 == 0))
+  def double: Gen[Double] = Gen(State(RNG.double))
   def listOfN[A](n: Int, g: Gen[A]): Gen[List[A]] = Gen(State(RNG.sequence(List.fill(n)(g.sample.run))))
 }
 

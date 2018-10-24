@@ -29,8 +29,36 @@ class PropTest extends FunSuite {
     assert((0 until 5).map(i => gen.sample.run(Simple(i))._1) === Seq(true, true, false, true, false))
   }
 
-  test("listOfN") {
+  test("static listOfN") {
     val gen = Gen.listOfN(5, Gen.choose(-2, 2))
     assert(gen.sample.run(Simple(0))._1 === List(-2, 0, -1, -1, 0))
+  }
+
+  test("listOfN") {
+    val gen = Gen.choose(0, 5)
+    val lists = for (seed <- 0 to 3) yield gen.listOfN(gen).sample.run(Simple(seed))
+
+    assert(lists.map(_._1) === List(
+      List(),
+      List(),
+      List(1),
+      List(2, 1)
+    ))
+  }
+
+  test("union") {
+    val gen1 = Gen.choose(0, 5)
+    val gen2 = Gen.choose(-5, 0)
+    val united = Gen.listOfN(5, gen1.union(gen2)).sample.run(Simple(1))
+    assert(united._1 === List(2, -4, 1, 3, -4))
+  }
+
+  test("weighted") {
+    val gen1 = Gen.choose(0, 5)
+    val gen2 = Gen.choose(-5, 0)
+    val weightedGenList = Gen.listOfN(1000, gen1.weighted(.7)(gen2, .3)).sample.run(Simple(100))
+    val valuesFromGen1 = weightedGenList._1.count(_ < 0)
+
+    assert(valuesFromGen1 === 706)
   }
 }
