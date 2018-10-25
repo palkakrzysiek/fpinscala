@@ -1,18 +1,19 @@
 package fpinscala.testing
 
 import fpinscala.state.RNG.Simple
+import fpinscala.testing.Prop.{Falsified, Passed}
 import org.scalatest.FunSuite
 
 class PropTest extends FunSuite {
-  test("&&") {
-    val p1 = new Prop {
-      def check = true
-    }
-    val p2 = new Prop {
-      def check = false
-    }
-    assert((p1 && p2).check === false)
-  }
+//  test("&&") {
+//    val p1 = new Prop {
+//      def check = true
+//    }
+//    val p2 = new Prop {
+//      def check = false
+//    }
+//    assert((p1 && p2).check === false)
+//  }
 
   test("Gen.choose") {
     val gen = Gen.choose(-2, 2)
@@ -60,5 +61,23 @@ class PropTest extends FunSuite {
     val valuesFromGen1 = weightedGenList._1.count(_ < 0)
 
     assert(valuesFromGen1 === 706)
+  }
+
+  test("run falsified") {
+    val rng = Simple(2)
+    val gen = Gen.choose(0, 5)
+    val res = Prop.forAll(gen){ i =>
+      i > 0
+    }.run(100, rng)
+    assert(res === Falsified("0", 2))
+  }
+
+  test("run passed") {
+    val rng = Simple(2)
+    val gen = Gen.choose(0, 5)
+    val res = Prop.forAll(gen){ i =>
+      i >= 0
+    }.run(100, rng)
+    assert(res === Passed)
   }
 }
