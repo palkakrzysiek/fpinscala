@@ -15,9 +15,18 @@ shell, which you can fill in and modify while working through the chapter.
 
 
 case class Prop(run: (TestCases,RNG) => Result) {
-//  def &&(p: Prop): Prop = Prop {
-//    (n, rng) => run(n, rng)
-//  }
+  def &&(p: Prop): Prop = Prop {
+    (n, rng) => run(n, rng) match {
+      case Passed => p.run(n, rng)
+      case failed => failed
+    }
+  }
+  def ||(p: Prop): Prop = Prop {
+    (n, rng) => run(n, rng) match {
+      case Falsified(_, _) => p.run(n, rng)
+      case passed => passed
+    }
+  }
 }
 
 

@@ -80,4 +80,43 @@ class PropTest extends FunSuite {
     }.run(100, rng)
     assert(res === Passed)
   }
+
+  test("&& passed") {
+    val rng = Simple(0)
+    val gen = Gen.choose(0, 5)
+    val p1 = Prop.forAll(gen){ i =>
+      i >= 0
+    }
+    val p2 = Prop.forAll(gen){ i =>
+      i < 5
+    }
+    val res = (p1 && p2).run(100, rng)
+    assert(res === Passed)
+  }
+
+  test("&& left failed") {
+    val rng = Simple(2)
+    val gen = Gen.choose(0, 5)
+    val p1 = Prop.forAll(gen){ i =>
+      i > 0
+    }
+    val p2 = Prop.forAll(gen){ i =>
+      i < 5
+    }
+    val res = (p1 && p2).run(100, rng)
+    assert(res === Falsified("0", 2))
+  }
+
+  test("&& right failed") {
+    val rng = Simple(2)
+    val gen = Gen.choose(0, 5)
+    val p1 = Prop.forAll(gen){ i =>
+      i >= 0
+    }
+    val p2 = Prop.forAll(gen){ i =>
+      i > 4
+    }
+    val res = (p1 && p2).run(100, rng)
+    assert(res === Falsified("1", 0))
+  }
 }
