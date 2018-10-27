@@ -75,7 +75,7 @@ case class Gen[A](sample: State[RNG, A]) {
     def isThis(rand: Double) = rand > thisWeight
     double.map(isThis).flatMap(if(_) this else other)
   }
-
+  def unsized: SGen[A] = SGen(_ => this)
 }
 
 object Gen {
@@ -84,9 +84,8 @@ object Gen {
   def boolean: Gen[Boolean] = Gen(State(RNG.int).map(_%2 == 0))
   def double: Gen[Double] = Gen(State(RNG.double))
   def listOfN[A](n: Int, g: Gen[A]): Gen[List[A]] = Gen(State(RNG.sequence(List.fill(n)(g.sample.run))))
+  def listOf[A](g: Gen[A]): SGen[List[A]] = SGen(i => listOfN(i, g))
 }
 
-trait SGen[+A] {
-
-}
+case class SGen[+A](forSize: Int => Gen[A])
 
