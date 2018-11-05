@@ -1,19 +1,19 @@
 lazy val dependencies =
   new {
     val typesafeConfigV = "1.3.1"
-    val pureconfigV     = "0.8.0"
-    val monocleV        = "1.4.0"
-    val akkaV           = "2.5.6"
-    val scalatestV      = "3.0.5"
-    val scalacheckV     = "1.13.5"
+    val pureconfigV = "0.8.0"
+    val monocleV = "1.4.0"
+    val akkaV = "2.5.6"
+    val scalatestV = "3.0.5"
+    val scalacheckV = "1.13.5"
 
-    val typesafeConfig = "com.typesafe"               % "config"                   % typesafeConfigV
-    val akka           = "com.typesafe.akka"          %% "akka-stream"             % akkaV
-    val monocleCore    = "com.github.julien-truffaut" %% "monocle-core"            % monocleV
-    val monocleMacro   = "com.github.julien-truffaut" %% "monocle-macro"           % monocleV
-    val pureconfig     = "com.github.pureconfig"      %% "pureconfig"              % pureconfigV
-    val scalatest      = "org.scalatest"              %% "scalatest"               % scalatestV
-    val scalacheck     = "org.scalacheck"             %% "scalacheck"              % scalacheckV
+    val typesafeConfig = "com.typesafe" % "config" % typesafeConfigV
+    val akka = "com.typesafe.akka" %% "akka-stream" % akkaV
+    val monocleCore = "com.github.julien-truffaut" %% "monocle-core" % monocleV
+    val monocleMacro = "com.github.julien-truffaut" %% "monocle-macro" % monocleV
+    val pureconfig = "com.github.pureconfig" %% "pureconfig" % pureconfigV
+    val scalatest = "org.scalatest" %% "scalatest" % scalatestV
+    val scalacheck = "org.scalacheck" %% "scalacheck" % scalacheckV
   }
 
 val commonSettings = Seq(
@@ -31,7 +31,7 @@ lazy val exercises = (project in file("exercises"))
   .settings(commonSettings)
   .settings(
     name := "exercises",
-    libraryDependencies += dependencies.scalatest
+    libraryDependencies ++= Seq(dependencies.scalatest, dependencies.scalacheck)
   )
 
 lazy val answers = (project in file("answers"))

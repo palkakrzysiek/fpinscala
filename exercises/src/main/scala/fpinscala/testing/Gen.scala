@@ -87,5 +87,5 @@ object Gen {
   def listOf[A](g: Gen[A]): SGen[List[A]] = SGen(i => listOfN(i, g))
 }
 
-case class SGen[+A](forSize: Int => Gen[A])
+case class SGen[A](forSize: Int => Gen[A])
 
