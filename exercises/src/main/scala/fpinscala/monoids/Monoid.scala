@@ -61,9 +61,14 @@ object Monoid {
   }
 
   def endoMonoid[A]: Monoid[A => A] = new Monoid[A => A] {
-    override def op(a1: A => A, a2: A => A): A => A = a1 andThen a2
+    override def op(a1: A => A, a2: A => A): A => A = a2 andThen a1
 
     override def zero: A => A = identity
+  }
+
+  def dual[A](m: Monoid[A]): Monoid[A] = new Monoid[A] {
+    def op(x: A, y: A): A = m.op(y, x)
+    val zero = m.zero
   }
 
   // TODO: Placeholder for `Prop`. Remove once you have implemented the `Prop`
@@ -80,16 +85,17 @@ object Monoid {
   def trimMonoid(s: String): Monoid[String] = ???
 
   def concatenate[A](as: List[A], m: Monoid[A]): A =
-    ???
+    as.fold(m.zero)(m.op)
 
   def foldMap[A, B](as: List[A], m: Monoid[B])(f: A => B): B =
-    ???
+    as.map(f).fold(m.zero)(m.op)
+
 
   def foldRight[A, B](as: List[A])(z: B)(f: (A, B) => B): B =
-    ???
+    foldMap(as, endoMonoid[B])(a => f(a, _))(z)
 
   def foldLeft[A, B](as: List[A])(z: B)(f: (B, A) => B): B =
-    ???
+    foldMap(as, dual(endoMonoid[B]))(b => f(_, b))(z)
 
   def foldMapV[A, B](as: IndexedSeq[A], m: Monoid[B])(f: A => B): B =
     ???
@@ -224,6 +230,15 @@ class MonoidTest extends FunSuite with PropertyChecks with Matchers{
     monoidLaws(intMultiplication)
     monoidLaws(booleanAnd)
     monoidLaws(booleanOr)
+  }
+
+  test("foldRight") {
+    foldRight(List("a", "b", "c"))("[start]")((a: String, acc: String) => acc + a) should be ("[start]cba")
+  }
+
+  test("foldLeft") {
+    foldLeft(List("a", "b", "c"))("[start]")((acc: String, a: String) => acc + a) should be ("[start]abc")
+//    List("a", "b", "c").foldLeft("[start]")((acc: String, a: String) => acc + a) should be ("[start]abc")
   }
 
 }
