@@ -97,8 +97,19 @@ object Monoid {
   def foldLeft[A, B](as: List[A])(z: B)(f: (B, A) => B): B =
     foldMap(as, dual(endoMonoid[B]))(b => f(_, b))(z)
 
-  def foldMapV[A, B](as: IndexedSeq[A], m: Monoid[B])(f: A => B): B =
-    ???
+  def foldMapV[A, B](as: IndexedSeq[A], m: Monoid[B])(f: A => B): B = {
+    val s = as.size
+    if (s == 0) m.zero
+    else if (s == 1) f(as(0))
+    else m.op(foldMapV(as.take(s/2), m)(f), foldMapV(as.drop(s/2), m)(f))
+  }
+
+  val isOrderedMonoid = new Monoid[Int => Int => Boolean] {
+
+    override def zero: Int => Int => Boolean = a => b => a <= b
+
+    override def op(a1: Int => Int => Boolean, a2: Int => Int => Boolean): Int => Int => Boolean = ???
+  }
 
   def ordered(ints: IndexedSeq[Int]): Boolean =
     ???
@@ -239,6 +250,18 @@ class MonoidTest extends FunSuite with PropertyChecks with Matchers{
   test("foldLeft") {
     foldLeft(List("a", "b", "c"))("[start]")((acc: String, a: String) => acc + a) should be ("[start]abc")
 //    List("a", "b", "c").foldLeft("[start]")((acc: String, a: String) => acc + a) should be ("[start]abc")
+  }
+
+  test("foldMapV") {
+    val m = new Monoid[Int] {
+      override def op(a1: Int, a2: Int): Int = a1 + a2
+
+      override def zero: Int = 0
+    }
+    foldMapV(Vector(), m)(identity) should be (0)
+    foldMapV(Vector(1), m)(identity) should be (1)
+    foldMapV(Vector(1, 2), m)(identity) should be (3)
+    foldMapV(Vector(1, 2, 3), m)(identity) should be (6)
   }
 
 }
