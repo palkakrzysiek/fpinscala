@@ -104,15 +104,33 @@ object Monoid {
     else m.op(foldMapV(as.take(s/2), m)(f), foldMapV(as.drop(s/2), m)(f))
   }
 
-  val isOrderedMonoid = new Monoid[Int => Int => Boolean] {
-
-    override def zero: Int => Int => Boolean = a => b => a <= b
-
-    override def op(a1: Int => Int => Boolean, a2: Int => Int => Boolean): Int => Int => Boolean = ???
+  type SortedSoFar = Boolean
+  sealed trait OrderedState {
+    def isSorted: Boolean
+  }
+  case class HasElements(min: Int, max: Int, ordered: SortedSoFar) extends OrderedState {
+    override def isSorted: SortedSoFar = ordered
+  }
+  object Empty extends OrderedState {
+    override def isSorted: SortedSoFar = true
   }
 
-  def ordered(ints: IndexedSeq[Int]): Boolean =
-    ???
+  val isOrderedMonoid: Monoid[OrderedState] = new Monoid[OrderedState] {
+    override def op(a1: OrderedState, a2: OrderedState): OrderedState = (a1, a2) match {
+      case (l: HasElements, r: HasElements) => HasElements(
+        l.min min r.min,
+        l.max max r.max,
+        l.ordered && r.ordered && l.max <= r.min
+      )
+      case _ => Empty
+    }
+
+    override def zero: OrderedState = Empty
+  }
+
+  def ordered(ints: IndexedSeq[Int]): Boolean = {
+    foldMapV(ints, isOrderedMonoid)(i => HasElements(i, i, ordered = true)).isSorted
+  }
 
   sealed trait WC
 
@@ -262,6 +280,14 @@ class MonoidTest extends FunSuite with PropertyChecks with Matchers{
     foldMapV(Vector(1), m)(identity) should be (1)
     foldMapV(Vector(1, 2), m)(identity) should be (3)
     foldMapV(Vector(1, 2, 3), m)(identity) should be (6)
+  }
+
+  test("ordered") {
+    ordered(Vector()) should be (true)
+    ordered(Vector(1)) should be (true)
+    ordered(Vector(1, 1)) should be (true)
+    ordered(Vector(1, 2)) should be (true)
+    ordered(Vector(2, 1)) should be (false)
   }
 
 }
