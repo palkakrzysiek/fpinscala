@@ -2,7 +2,7 @@ package fpinscala.monoids
 
 import fpinscala.parallelism.Nonblocking._
 import fpinscala.parallelism.Nonblocking.Par.toParOps
-import org.scalacheck.Arbitrary
+import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{Assertion, FunSuite, Matchers}
 
@@ -68,7 +68,7 @@ object Monoid {
 
   def dual[A](m: Monoid[A]): Monoid[A] = new Monoid[A] {
     def op(x: A, y: A): A = m.op(y, x)
-    val zero = m.zero
+    val zero: A = m.zero
   }
 
   // TODO: Placeholder for `Prop`. Remove once you have implemented the `Prop`
@@ -144,7 +144,23 @@ object Monoid {
   def parFoldMap[A, B](v: IndexedSeq[A], m: Monoid[B])(f: A => B): Par[B] =
     ???
 
-  lazy val wcMonoid: Monoid[WC] = ???
+  lazy val wcMonoid: Monoid[WC] = new Monoid[WC] {
+    override def op(a1: WC, a2: WC): WC = (a1, a2) match {
+      case (Stub(l), Stub(r)) => Stub(l + r)
+      case (Stub(ll), Part(lStub, words, rStub)) => Part(ll + lStub, words, rStub)
+      case (Part(lStub, words, rStub), Stub(rr)) => Part(lStub, words, rStub + rr)
+      case (l: Part, r: Part) => {
+        val lrWords = l.words + r.words
+        Part(
+        l.lStub,
+        lrWords,
+        r.rStub
+      )
+      }
+    }
+
+    override def zero: WC = Stub("")
+  }
 
   def count(s: String): Int = ???
 
@@ -288,6 +304,18 @@ class MonoidTest extends FunSuite with PropertyChecks with Matchers{
     ordered(Vector(1, 1)) should be (true)
     ordered(Vector(1, 2)) should be (true)
     ordered(Vector(2, 1)) should be (false)
+  }
+
+  test("wcMonoid") {
+    val charGen: Gen[Char] = Gen.choose(" "(0), "Z"(0))
+    val charGen2: Gen[Char] = Gen.choose(" "(0), "Z"(0))
+    val wcGen: Gen[WC] = for {
+      strL: Seq[Char] <- Gen.listOf(charGen)
+      strR: Seq[Char] <- Gen.listOf(charGen2)
+      words: Int <- Gen.choose(0, 5)
+    } yield if (words == 0) Stub(strL.mkString)
+    else Part(strL.mkString, words, strR.mkString)
+    monoidLaws(wcMonoid)(Arbitrary(wcGen))
   }
 
 }
