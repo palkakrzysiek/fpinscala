@@ -68,6 +68,7 @@ object Monoid {
 
   def dual[A](m: Monoid[A]): Monoid[A] = new Monoid[A] {
     def op(x: A, y: A): A = m.op(y, x)
+
     val zero: A = m.zero
   }
 
@@ -101,16 +102,19 @@ object Monoid {
     val s = as.size
     if (s == 0) m.zero
     else if (s == 1) f(as(0))
-    else m.op(foldMapV(as.take(s/2), m)(f), foldMapV(as.drop(s/2), m)(f))
+    else m.op(foldMapV(as.take(s / 2), m)(f), foldMapV(as.drop(s / 2), m)(f))
   }
 
   type SortedSoFar = Boolean
+
   sealed trait OrderedState {
     def isSorted: Boolean
   }
+
   case class HasElements(min: Int, max: Int, ordered: SortedSoFar) extends OrderedState {
     override def isSorted: SortedSoFar = ordered
   }
+
   object Empty extends OrderedState {
     override def isSorted: SortedSoFar = true
   }
@@ -132,11 +136,27 @@ object Monoid {
     foldMapV(ints, isOrderedMonoid)(i => HasElements(i, i, ordered = true)).isSorted
   }
 
-  sealed trait WC
+  sealed trait WC {
+    def count: Int
+  }
 
-  case class Stub(chars: String) extends WC
+  object WC {
+    def apply(char: Char): WC =
+      if (char.isWhitespace) Part(Stub(""), 0, Stub(""))
+      else Stub(char.toString)
+  }
 
-  case class Part(lStub: String, words: Int, rStub: String) extends WC
+  case class Stub(chars: String) extends WC {
+    override def count: Int = if (chars.isEmpty) 0
+    else if (chars.forall(_.isWhitespace)) 0
+    else 1
+
+    def endoMap(f: String => String): Stub = Stub(f(chars))
+  }
+
+  case class Part(lStub: Stub, words: Int, rStub: Stub) extends WC {
+    override def count: Int = lStub.count + words + rStub.count
+  }
 
   def par[A](m: Monoid[A]): Monoid[Par[A]] =
     ???
@@ -147,22 +167,24 @@ object Monoid {
   lazy val wcMonoid: Monoid[WC] = new Monoid[WC] {
     override def op(a1: WC, a2: WC): WC = (a1, a2) match {
       case (Stub(l), Stub(r)) => Stub(l + r)
-      case (Stub(ll), Part(lStub, words, rStub)) => Part(ll + lStub, words, rStub)
-      case (Part(lStub, words, rStub), Stub(rr)) => Part(lStub, words, rStub + rr)
+      case (Stub(ll), Part(lStub, words, rStub)) => Part(lStub.endoMap(ll + _), words, rStub)
+      case (Part(lStub, words, rStub), Stub(rr)) => Part(lStub, words, rStub.endoMap(_ + rr))
       case (l: Part, r: Part) => {
         val lrWords = l.words + r.words
         Part(
-        l.lStub,
-        lrWords,
-        r.rStub
-      )
+          l.lStub,
+          lrWords + (l.rStub.count + r.lStub.count).max(1),
+          r.rStub
+        )
       }
     }
 
     override def zero: WC = Stub("")
   }
 
-  def count(s: String): Int = ???
+  def count(s: String): Int = {
+    foldMapV(s.toIndexedSeq, wcMonoid)(WC(_)).count
+  }
 
   def productMonoid[A, B](A: Monoid[A], B: Monoid[B]): Monoid[(A, B)] =
     ???
@@ -255,7 +277,7 @@ object OptionFoldable extends Foldable[Option] {
     ???
 }
 
-class MonoidTest extends FunSuite with PropertyChecks with Matchers{
+class MonoidTest extends FunSuite with PropertyChecks with Matchers {
 
   import Monoid._
 
@@ -278,12 +300,12 @@ class MonoidTest extends FunSuite with PropertyChecks with Matchers{
   }
 
   test("foldRight") {
-    foldRight(List("a", "b", "c"))("[start]")((a: String, acc: String) => acc + a) should be ("[start]cba")
+    foldRight(List("a", "b", "c"))("[start]")((a: String, acc: String) => acc + a) should be("[start]cba")
   }
 
   test("foldLeft") {
-    foldLeft(List("a", "b", "c"))("[start]")((acc: String, a: String) => acc + a) should be ("[start]abc")
-//    List("a", "b", "c").foldLeft("[start]")((acc: String, a: String) => acc + a) should be ("[start]abc")
+    foldLeft(List("a", "b", "c"))("[start]")((acc: String, a: String) => acc + a) should be("[start]abc")
+    //    List("a", "b", "c").foldLeft("[start]")((acc: String, a: String) => acc + a) should be ("[start]abc")
   }
 
   test("foldMapV") {
@@ -292,30 +314,48 @@ class MonoidTest extends FunSuite with PropertyChecks with Matchers{
 
       override def zero: Int = 0
     }
-    foldMapV(Vector(), m)(identity) should be (0)
-    foldMapV(Vector(1), m)(identity) should be (1)
-    foldMapV(Vector(1, 2), m)(identity) should be (3)
-    foldMapV(Vector(1, 2, 3), m)(identity) should be (6)
+    foldMapV(Vector(), m)(identity) should be(0)
+    foldMapV(Vector(1), m)(identity) should be(1)
+    foldMapV(Vector(1, 2), m)(identity) should be(3)
+    foldMapV(Vector(1, 2, 3), m)(identity) should be(6)
   }
 
   test("ordered") {
-    ordered(Vector()) should be (true)
-    ordered(Vector(1)) should be (true)
-    ordered(Vector(1, 1)) should be (true)
-    ordered(Vector(1, 2)) should be (true)
-    ordered(Vector(2, 1)) should be (false)
+    ordered(Vector()) should be(true)
+    ordered(Vector(1)) should be(true)
+    ordered(Vector(1, 1)) should be(true)
+    ordered(Vector(1, 2)) should be(true)
+    ordered(Vector(2, 1)) should be(false)
   }
 
   test("wcMonoid") {
-    val charGen: Gen[Char] = Gen.choose(" "(0), "Z"(0))
-    val charGen2: Gen[Char] = Gen.choose(" "(0), "Z"(0))
+    val charGen: Gen[Char] = Gen.choose(" " (0), "Z" (0))
+    val charGen2: Gen[Char] = Gen.choose(" " (0), "Z" (0))
     val wcGen: Gen[WC] = for {
       strL: Seq[Char] <- Gen.listOf(charGen)
       strR: Seq[Char] <- Gen.listOf(charGen2)
       words: Int <- Gen.choose(0, 5)
     } yield if (words == 0) Stub(strL.mkString)
-    else Part(strL.mkString, words, strR.mkString)
+    else Part(Stub(strL.mkString), words, Stub(strR.mkString))
     monoidLaws(wcMonoid)(Arbitrary(wcGen))
+  }
+
+  test("count") {
+    for ((str, c) <- Seq(
+      (" ", 0),
+      (" ", 0),
+      (" a", 1),
+      ("a ", 1),
+      (" a ", 1),
+      (" a b ", 2),
+      ("ab", 1),
+      ("ab ", 1),
+      (" ab", 1)
+    )) {
+      withClue(s"[$str] should have count of [$c]") {
+        count(str) should be (c)
+      }
+    }
   }
 
 }
