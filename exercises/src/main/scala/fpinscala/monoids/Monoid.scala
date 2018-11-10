@@ -186,8 +186,14 @@ object Monoid {
     foldMapV(s.toIndexedSeq, wcMonoid)(WC(_)).count
   }
 
-  def productMonoid[A, B](A: Monoid[A], B: Monoid[B]): Monoid[(A, B)] =
-    ???
+  def productMonoid[A, B](a: Monoid[A], b: Monoid[B]): Monoid[(A, B)] =
+    new Monoid[(A, B)] {
+      override def op(a1: (A, B), a2: (A, B)): (A, B) = (a1, a2) match {
+        case ((a1l, a1r), (a2l, a2r)) => (a.op(a1l, a2l), b.op(a1r, a2r))
+      }
+
+      override def zero: (A, B) = (a.zero, b.zero)
+    }
 
   def functionMonoid[A, B](B: Monoid[B]): Monoid[A => B] =
     ???
@@ -213,40 +219,43 @@ trait Foldable[F[_]] {
     ???
 
   def concatenate[A](as: F[A])(m: Monoid[A]): A =
-    ???
+    foldLeft(as)(m.zero)(m.op)
 
   def toList[A](as: F[A]): List[A] =
-    ???
+    foldRight(as)(Nil: List[A])(_ :: _)
 }
 
 object ListFoldable extends Foldable[List] {
-  override def foldRight[A, B](as: List[A])(z: B)(f: (A, B) => B) =
-    ???
+  override def foldRight[A, B](as: List[A])(z: B)(f: (A, B) => B): B =
+    as.foldRight(z)(f)
 
-  override def foldLeft[A, B](as: List[A])(z: B)(f: (B, A) => B) =
-    ???
+  override def foldLeft[A, B](as: List[A])(z: B)(f: (B, A) => B): B =
+    as.foldLeft(z)(f)
 
   override def foldMap[A, B](as: List[A])(f: A => B)(mb: Monoid[B]): B =
-    ???
+    as.toStream.map(f).fold(mb.zero)(mb.op)
 }
 
 object IndexedSeqFoldable extends Foldable[IndexedSeq] {
   override def foldRight[A, B](as: IndexedSeq[A])(z: B)(f: (A, B) => B) =
-    ???
+    as.foldRight(z)(f)
 
   override def foldLeft[A, B](as: IndexedSeq[A])(z: B)(f: (B, A) => B) =
-    ???
+    as.foldLeft(z)(f)
 
   override def foldMap[A, B](as: IndexedSeq[A])(f: A => B)(mb: Monoid[B]): B =
-    ???
+    Monoid.foldMapV(as, mb)(f)
 }
 
 object StreamFoldable extends Foldable[Stream] {
   override def foldRight[A, B](as: Stream[A])(z: B)(f: (A, B) => B) =
-    ???
+    as.foldRight(z)(f)
 
   override def foldLeft[A, B](as: Stream[A])(z: B)(f: (B, A) => B) =
-    ???
+    as.foldLeft(z)(f)
+
+  override def foldMap[A, B](as: Stream[A])(f: A => B)(mb: Monoid[B]): B =
+    as.map(f).fold(mb.zero)(mb.op)
 }
 
 sealed trait Tree[+A]
@@ -257,24 +266,35 @@ case class Branch[A](left: Tree[A], right: Tree[A]) extends Tree[A]
 
 object TreeFoldable extends Foldable[Tree] {
   override def foldMap[A, B](as: Tree[A])(f: A => B)(mb: Monoid[B]): B =
-    ???
+    as match {
+      case Leaf(value) => f(value)
+      case Branch(l, r) => mb.op(foldMap(l)(f)(mb), foldMap(r)(f)(mb))
+    }
+
 
   override def foldLeft[A, B](as: Tree[A])(z: B)(f: (B, A) => B) =
-    ???
+    as match {
+      case Leaf(v) => f(z, v)
+      case Branch(l, r) => foldLeft(r)(foldLeft(l)(z)(f))(f)
+    }
+
 
   override def foldRight[A, B](as: Tree[A])(z: B)(f: (A, B) => B) =
-    ???
+    as match {
+      case Leaf(v) => f(z, v)
+      case Branch(l, r) => foldRight(l)(foldRight(r)(z)(f))(f)
+    }
 }
 
 object OptionFoldable extends Foldable[Option] {
   override def foldMap[A, B](as: Option[A])(f: A => B)(mb: Monoid[B]): B =
-    ???
+    as.fold(mb.zero)(f)
 
   override def foldLeft[A, B](as: Option[A])(z: B)(f: (B, A) => B) =
-    ???
+    as.foldLeft(z)(f)
 
   override def foldRight[A, B](as: Option[A])(z: B)(f: (A, B) => B) =
-    ???
+    as.foldRight(z)(f)
 }
 
 class MonoidTest extends FunSuite with PropertyChecks with Matchers {
