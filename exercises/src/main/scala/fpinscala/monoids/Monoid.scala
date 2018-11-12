@@ -195,14 +195,24 @@ object Monoid {
       override def zero: (A, B) = (a.zero, b.zero)
     }
 
-  def functionMonoid[A, B](B: Monoid[B]): Monoid[A => B] =
-    ???
+  def functionMonoid[A, B](B: Monoid[B]): Monoid[A => B] = new Monoid[A => B] {
+    def op(f: A => B, g: A => B): A => B = a => B.op(f(a), g(a))
+    val zero: A => B = _ => B.zero
+  }
 
-  def mapMergeMonoid[K, V](V: Monoid[V]): Monoid[Map[K, V]] =
-    ???
 
-  def bag[A](as: IndexedSeq[A]): Map[A, Int] =
-    ???
+  def mapMergeMonoid[K,V](V: Monoid[V]): Monoid[Map[K, V]] =
+    new Monoid[Map[K, V]] {
+      def zero = Map[K,V]()
+      def op(a: Map[K, V], b: Map[K, V]) =
+        (a.keySet ++ b.keySet).foldLeft(zero) { (acc,k) =>
+          acc.updated(k, V.op(a.getOrElse(k, V.zero),
+            b.getOrElse(k, V.zero)))
+        }
+    }
+
+  def bag[A](as: IndexedSeq[A]): Map[A, Int] = foldMapV(as, mapMergeMonoid(intAddition))((a: A) => (a, 1))
+
 }
 
 trait Foldable[F[_]] {
