@@ -36,7 +36,9 @@ trait Monad[M[_]] extends Functor[M] {
   def map2[A,B,C](ma: M[A], mb: M[B])(f: (A, B) => C): M[C] =
     flatMap(ma)(a => map(mb)(b => f(a, b)))
 
-  def sequence[A](lma: List[M[A]]): M[List[A]] = ???
+  def sequence[A](lma: List[M[A]]): M[List[A]] = lma.foldRight(unit(Nil: List[A]))((ma: M[A], mAcc: M[List[A]]) =>
+    flatMap(mAcc)(acc => map(ma)(a => a :: acc))
+  )
 
   def traverse[A,B](la: List[A])(f: A => M[B]): M[List[B]] = ???
 
@@ -62,19 +64,35 @@ object Monad {
       ma flatMap f
   }
 
-  val parMonad: Monad[Par] = ???
+  val parMonad: Monad[Par] = new Monad[Par] {
+    override def unit[A](a: => A): Par[A] = Par.unit(a)
+
+    override def flatMap[A, B](ma: Par[A])(f: A => Par[B]): Par[B] = Par.flatMap(ma)(f)
+  }
 
   def parserMonad[P[+_]](p: Parsers[P]): Monad[P] = ???
 
-  val optionMonad: Monad[Option] = ???
+  val optionMonad: Monad[Option] = new Monad[Option] {
+    override def unit[A](a: => A): Option[A] = Some(a)
 
-  val streamMonad: Monad[Stream] = ???
+    override def flatMap[A, B](ma: Option[A])(f: A => Option[B]): Option[B] = ma.flatMap(f)
+  }
 
-  val listMonad: Monad[List] = ???
+  val streamMonad: Monad[Stream] = new Monad[Stream] {
+    override def unit[A](a: => A): Stream[A] = Stream.apply(a)
+
+    override def flatMap[A, B](ma: Stream[A])(f: A => Stream[B]): Stream[B] = ma.flatMap(f)
+  }
+
+  val listMonad: Monad[List] = new Monad[List] {
+    override def unit[A](a: => A): List[A] = List(a)
+
+    override def flatMap[A, B](ma: List[A])(f: A => List[B]): List[B] = ma.flatMap(f)
+  }
 
   def stateMonad[S] = ???
 
-  val idMonad: Monad[Id] = ???
+  lazy val idMonad: Monad[Id] = ???
 
   def readerMonad[R] = ???
 }

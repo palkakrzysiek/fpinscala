@@ -211,7 +211,8 @@ object Monoid {
         }
     }
 
-  def bag[A](as: IndexedSeq[A]): Map[A, Int] = foldMapV(as, mapMergeMonoid(intAddition))((a: A) => (a, 1))
+  def bag[A](as: IndexedSeq[A]): Map[A, Int] =
+    foldMapV(as, mapMergeMonoid[A, Int](intAddition))((a: A) => Map(a -> 1))
 
 }
 
@@ -289,9 +290,9 @@ object TreeFoldable extends Foldable[Tree] {
     }
 
 
-  override def foldRight[A, B](as: Tree[A])(z: B)(f: (A, B) => B) =
+  override def foldRight[A, B](as: Tree[A])(z: B)(f: (A, B) => B): B =
     as match {
-      case Leaf(v) => f(z, v)
+      case Leaf(v) => f(v, z)
       case Branch(l, r) => foldRight(l)(foldRight(r)(z)(f))(f)
     }
 }
