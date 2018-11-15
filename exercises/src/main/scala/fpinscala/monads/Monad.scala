@@ -40,9 +40,9 @@ trait Monad[M[_]] extends Functor[M] {
     flatMap(mAcc)(acc => map(ma)(a => a :: acc))
   )
 
-  def traverse[A,B](la: List[A])(f: A => M[B]): M[List[B]] = ???
+  def traverse[A,B](la: List[A])(f: A => M[B]): M[List[B]] = sequence(la.map(f))
 
-  def replicateM[A](n: Int, ma: M[A]): M[List[A]] = ???
+  def replicateM[A](n: Int, ma: M[A]): M[List[A]] = sequence(List.fill(n)(ma))
 
   def compose[A,B,C](f: A => M[B], g: B => M[C]): A => M[C] = ???
 
