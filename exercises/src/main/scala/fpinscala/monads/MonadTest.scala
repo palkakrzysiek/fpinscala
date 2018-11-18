@@ -15,4 +15,9 @@ class MonadTest extends FunSuite with Matchers{
     optionMonad.traverse(List(1,2,3))(Some(_)) should be (Option(List(1,2,3)))
   }
 
+  test("filterM") {
+    optionMonad.filterM(List(1,2,3,4))(Some(_) map (_ % 2 == 0)) should
+      be (Option(List(2,4)))
+  }
+
 }
