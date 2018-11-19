@@ -20,4 +20,10 @@ class MonadTest extends FunSuite with Matchers{
       be (Option(List(2,4)))
   }
 
+  test("flatMap via compose") {
+    optionMonad._flatMap(Some(1))(i => Some(i * 2)) should be(Some(2))
+    optionMonad._flatMap(Some(1))(_ => None) should be(None)
+    optionMonad._flatMap(None: Option[Int])(i => Some(i * 2)) should be(None)
+  }
+
 }
