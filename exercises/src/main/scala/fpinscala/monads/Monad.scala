@@ -115,3 +115,28 @@ object Reader {
   }
 }
 
+/*
+EX 11.10
+compose(f, unit) == f // <1>
+compose(unit, f) == f // <2>
+
+flatMap(x)(unit) == x
+flatMap(unit(y))(f) == f(y)
+
+
+Because of
+  def compose[A,B,C](f: A => M[B], g: B => M[C]): A => M[C] =
+  a => flatMap(f(a))(g)
+
+LHS of <1> (right identity) can be rewritten
+
+compose(f, unit) == flatMap(f)(unit)
+
+then <1> is
+flatMap(f)(unit) == f // replacing f with x
+flatMap(x)(unit) == x // Q.E.D.
+
+
+
+ */
+
