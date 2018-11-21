@@ -117,12 +117,11 @@ object Reader {
 
 /*
 EX 11.10
+
+# Left identity
 compose(f, unit) == f // <1>
-compose(unit, f) == f // <2>
-
+<==>
 flatMap(x)(unit) == x
-flatMap(unit(y))(f) == f(y)
-
 
 Because of
   def compose[A,B,C](f: A => M[B], g: B => M[C]): A => M[C] =
@@ -130,13 +129,32 @@ Because of
 
 LHS of <1> (right identity) can be rewritten
 
-compose(f, unit) == flatMap(f)(unit)
+compose(f, unit)(v) == flatMap(f)(unit)(v)
 
 then <1> is
-flatMap(f)(unit) == f // replacing f with x
-flatMap(x)(unit) == x // Q.E.D.
+flatMap(f)(unit)(v) == f(v) // replacing f with x
+flatMap(x)(unit)(v) == x(v) // Q.E.D.
 
+# Right identity
 
+compose(unit, f)(v) == f(v) // <2>
+<==>
+flatMap(unit(y))(f) == f(y) <3>
+
+Because of
+  def compose[A,B,C](f: A => M[B], g: B => M[C]): A => M[C] =
+  a => flatMap(f(a))(g)
+
+LHS of <2> can be rewritten
+ compose(unit, f)(v) ==
+ (a => flatMap(unit(a))(f))(v) ==
+ flatMap(unit(v))(f)), putting this into <2>
+
+flatMap(unit(v))(f)) == f(v)
+<==>
+flatMap(unit(y))(f)) == f(y) // replacing v with y
+
+Q.E.D
 
  */
 
