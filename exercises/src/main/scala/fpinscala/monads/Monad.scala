@@ -6,7 +6,8 @@ import testing._
 import parallelism._
 import state._
 import parallelism.Par._
-import language.higherKinds
+
+import language.{higherKinds, reflectiveCalls}
 
 
 trait Functor[F[_]] {
@@ -28,6 +29,12 @@ object Functor {
 }
 
 trait Monad[M[_]] extends Functor[M] {
+  // partially-applied type named "IntOrA"
+  type IntOrA[A] = Either[Int, A]
+
+  // type projection implementing the same type anonymously (without a name).
+  // val x: ({type L[A] = Either[Int, A]})#L = Left(2)
+
   def unit[A](a: => A): M[A]
   def flatMap[A,B](ma: M[A])(f: A => M[B]): M[B]
 
@@ -55,10 +62,10 @@ trait Monad[M[_]] extends Functor[M] {
   // Implement in terms of `compose`:
   def _flatMap[A,B](ma: M[A])(f: A => M[B]): M[B] = compose((_: Unit) => ma, f)()
 
-  def join[A](mma: M[M[A]]): M[A] = ???
+  def join[A](mma: M[M[A]]): M[A] = flatMap(mma)(identity)
 
   // Implement in terms of `join`:
-  def __flatMap[A,B](ma: M[A])(f: A => M[B]): M[B] = ???
+  def __flatMap[A,B](ma: M[A])(f: A => M[B]): M[B] = join(map(ma)(f))
 }
 
 case class Reader[R, A](run: R => A)
@@ -96,16 +103,24 @@ object Monad {
     override def flatMap[A, B](ma: List[A])(f: A => List[B]): List[B] = ma.flatMap(f)
   }
 
-  def stateMonad[S] = ???
+  def stateMonad[S] = new Monad[({type f[x] = State[S, x]})#f] {
+    override def unit[A](a: => A): State[S, A] = State.unit(a)
 
-  lazy val idMonad: Monad[Id] = ???
+    override def flatMap[A, B](ma: State[S, A])(f: A => State[S, B]): State[S, B] = ma.flatMap(f)
+  }
+
+  lazy val idMonad: Monad[Id] = new Monad[Id] {
+    override def unit[A](a: => A): Id[A] = Id(a)
+
+    override def flatMap[A, B](ma: Id[A])(f: A => Id[B]): Id[B] = ma.flatMap(f)
+  }
 
   def readerMonad[R] = ???
 }
 
 case class Id[A](value: A) {
-  def map[B](f: A => B): Id[B] = ???
-  def flatMap[B](f: A => Id[B]): Id[B] = ???
+  def map[B](f: A => B): Id[B] = Id(f(value))
+  def flatMap[B](f: A => Id[B]): Id[B] = f(value)
 }
 
 object Reader {
@@ -157,4 +172,15 @@ flatMap(unit(y))(f)) == f(y) // replacing v with y
 Q.E.D
 
  */
+
+/*
+11.11
+Right identity for Option
+flatMap(x)(unit) == x
+
+flatMap(None)(unit) =
+  flatMap(None)(Some(_)) = // using unit of Option
+  x // applying Some(_) to flatMap of Option
+jeez, enough
+*/
 
