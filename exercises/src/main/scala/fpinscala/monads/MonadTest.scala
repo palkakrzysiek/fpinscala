@@ -39,7 +39,13 @@ class MonadTest extends FunSuite with Matchers {
     stateMonad.replicateM(3, increase).run(1) should be ((List(4, 3, 2), 4))
     stateMonad.sequence(List.fill(3)(increase)).run(1) should be ((List(4, 3, 2), 4))
     stateMonad.map2(increase, increase)(("mapped", _, _)).run(1) should be ((("mapped", 2, 3), 3))
+  }
 
-
+  test("reader monad") {
+    val value: Reader[Int, String] = Reader((s: Int) => s.toString)
+    readerMonad.replicateM(3, value).run(1) should be(List("1", "1", "1"))
+    readerMonad.sequence(List.fill(3)(value)).run(1) should be (List("1", "1", "1"))
+    readerMonad.map2(value, value)(("mapped", _, _)).run(1) should be (("mapped", "1", "1"))
+    readerMonad.join(Reader((i: Int) => Reader((j: Int) => (i + j)))).run(1) should be(2)
   }
 }
