@@ -17,18 +17,18 @@ trait Applicative[F[_]] extends Functor[F] {
 
   def unit[A](a: => A): F[A]
 
-  def map[A,B](fa: F[A])(f: A => B): F[B] =
-    apply(unit(f))(fa)
+  def map[A,B](fa: F[A])(f: A => B): F[B] = apply(unit(f))(fa)
 
-  def sequence[A](fas: List[F[A]]): F[List[A]] = ???
+  def sequence[A](fas: List[F[A]]): F[List[A]] = fas.foldRight(unit(List.empty[A]))((fa: F[A], acc: F[List[A]])=> map2(fa, acc)(_ :: _))
 
-  def traverse[A,B](as: List[A])(f: A => F[B]): F[List[B]] = ???
+  def traverse[A,B](as: List[A])(f: A => F[B]): F[List[B]] = sequence(as.map(f))
 
-  def replicateM[A](n: Int, fa: F[A]): F[List[A]] = ???
+  def replicateM[A](n: Int, fa: F[A]): F[List[A]] = sequence(List.fill(n)(fa))
 
   def factor[A,B](fa: F[A], fb: F[B]): F[(A,B)] = ???
 
-  def product[G[_]](G: Applicative[G]): Applicative[({type f[x] = (F[x], G[x])})#f] = ???
+  def product[A, B](fa: F[A], fb: F[B]): F[(A, B)] = map2(fa, fb)((_, _))
+//  def product[G[_]](G: Applicative[G]): Applicative[({type f[x] = (F[x], G[x])})#f] = ???
 
   def compose[G[_]](G: Applicative[G]): Applicative[({type f[x] = F[G[x]]})#f] = ???
 
@@ -60,6 +60,12 @@ object Monad {
 
   def composeM[F[_],N[_]](implicit F: Monad[F], N: Monad[N], T: Traverse[N]):
     Monad[({type f[x] = F[N[x]]})#f] = ???
+
+  val optionMonad: Monad[Option] = new Monad[Option] {
+    override def unit[A](a: => A): Option[A] = Some(a)
+
+    override def flatMap[A, B](ma: Option[A])(f: A => Option[B]): Option[B] = ma.flatMap(f)
+  }
 }
 
 sealed trait Validation[+E, +A]
