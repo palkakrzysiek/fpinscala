@@ -11,13 +11,19 @@ import language.implicitConversions
 
 trait Applicative[F[_]] extends Functor[F] {
 
+  def map[A,B](fa: F[A])(f: A => B): F[B] = apply(unit(f))(fa)
+
   def map2[A,B,C](fa: F[A], fb: F[B])(f: (A, B) => C): F[C] = apply(apply(unit(f.curried))(fa))(fb)
+
+  def map3[A,B,C,D](fa: F[A], fb: F[B], fc: F[C])(f: (A, B, C) => D): F[D] =
+    apply(apply(apply(unit(f.curried))(fa))(fb))(fc)
+
+  def map4[A,B,C,D,E](fa: F[A], fb: F[B], fc: F[C], fd: F[D])(f: (A, B, C, D) => E): F[E] =
+    apply(apply(apply(apply(unit(f.curried))(fa))(fb))(fc))(fd)
 
   def apply[A,B](fab: F[A => B])(fa: F[A]): F[B] = map2(fab, fa)((ab, a) => ab(a))
 
   def unit[A](a: => A): F[A]
-
-  def map[A,B](fa: F[A])(f: A => B): F[B] = apply(unit(f))(fa)
 
   def sequence[A](fas: List[F[A]]): F[List[A]] = fas.foldRight(unit(List.empty[A]))((fa: F[A], acc: F[List[A]])=> map2(fa, acc)(_ :: _))
 
