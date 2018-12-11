@@ -4,9 +4,10 @@ import org.scalatest.{FunSuite, Matchers}
 
 import scala.collection.immutable
 
+import Applicative._
+
 class ApplicativeTest extends FunSuite with Matchers {
   test("stream applicative") {
-    import Applicative._
     val sequenced: Stream[List[Int]] = streamApplicative
       .sequence(List(
         Stream(1, 2, 3),
