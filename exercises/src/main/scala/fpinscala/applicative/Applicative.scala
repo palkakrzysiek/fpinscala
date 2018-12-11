@@ -29,6 +29,10 @@ trait Applicative[F[_]] extends Functor[F] {
 
   def sequence[A](fas: List[F[A]]): F[List[A]] = fas.foldRight(unit(List.empty[A]))((fa: F[A], acc: F[List[A]]) => map2(fa, acc)(_ :: _))
 
+  def sequenceMap[K,V](ofa: Map[K, F[V]]): F[Map[K, V]] = ofa.foldLeft(unit(Map.empty[K, V])) {
+    case (fAcc, (k, fv)) => map2(fv, fAcc)((v, acc) => acc + (k -> v))
+  }
+
   def traverse[A, B](as: List[A])(f: A => F[B]): F[List[B]] = sequence(as.map(f))
 
   def replicateM[A](n: Int, fa: F[A]): F[List[A]] = sequence(List.fill(n)(fa))
@@ -60,7 +64,6 @@ trait Applicative[F[_]] extends Functor[F] {
     }
   }
 
-  def sequenceMap[K, V](ofa: Map[K, F[V]]): F[Map[K, V]] = ???
 }
 
 case class Tree[+A](head: A, tail: List[Tree[A]])
