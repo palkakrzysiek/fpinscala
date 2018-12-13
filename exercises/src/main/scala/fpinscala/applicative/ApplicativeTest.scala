@@ -19,4 +19,8 @@ class ApplicativeTest extends FunSuite with Matchers {
     sequenced(2) should be(List(3, 6, 0))
     an [IndexOutOfBoundsException] should be thrownBy sequenced(3)
   }
+
+  test("list traverse") {
+    Traverse.listTraverse.traverse(List(1,2,3))(i => Stream.continually(i))(streamApplicative).take(2) should be (Stream(List(1, 2, 3), List(1, 2, 3)))
+  }
 }

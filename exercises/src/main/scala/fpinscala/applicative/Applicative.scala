@@ -218,9 +218,9 @@ object Traverse {
       }
   }
 
-  val optionTraverse = ???
+  lazy val optionTraverse = ???
 
-  val treeTraverse = ???
+  lazy val treeTraverse = ???
 }
 
 // The `get` and `set` functions on `State` are used above,
