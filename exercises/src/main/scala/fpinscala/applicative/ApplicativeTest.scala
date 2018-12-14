@@ -23,4 +23,9 @@ class ApplicativeTest extends FunSuite with Matchers {
   test("list traverse") {
     Traverse.listTraverse.traverse(List(1,2,3))(i => Stream.continually(i))(streamApplicative).take(2) should be (Stream(List(1, 2, 3), List(1, 2, 3)))
   }
+
+  test("option traverse") {
+    Traverse.optionTraverse.traverse(Some(1))(i => Stream.continually(i))(streamApplicative).take(2) should be (Stream(Some(1), Some(1)))
+    Traverse.optionTraverse.traverse(None)(i => Stream.continually(i))(streamApplicative).take(2) should be (Stream(None, None))
+  }
 }

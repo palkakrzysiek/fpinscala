@@ -218,7 +218,11 @@ object Traverse {
       }
   }
 
-  lazy val optionTraverse = ???
+  lazy val optionTraverse = new Traverse[Option] {
+    override def traverse[G[_] : Applicative, A, B](fa: Option[A])(f: A => G[B]): G[Option[B]] = fa
+      .fold(implicitly[Applicative[G]].unit(None): G[Option[B]])(a =>
+        implicitly[Applicative[G]].map(f(a))(b => Some(b)))
+  }
 
   lazy val treeTraverse = ???
 }
