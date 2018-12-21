@@ -207,7 +207,8 @@ trait Traverse[F[_]] extends Functor[F] with Foldable[F] {
   def zipWithIndex[A](fa: F[A]): F[(A, Int)] =
     mapAccum(fa, 0)((a, s) => ((a, s), s + 1))._1
 
-  def reverse[A](fa: F[A]): F[A] = ???
+  def reverse[A](fa: F[A]): F[A] =
+    mapAccum(fa, toList(fa))((_, as) => (as.head, as.tail))._1
 
   override def foldLeft[A, B](fa: F[A])(z: B)(f: (B, A) => B): B = ???
 
@@ -219,7 +220,7 @@ trait Traverse[F[_]] extends Functor[F] with Foldable[F] {
 }
 
 object Traverse {
-  val listTraverse: Traverse[List] = new Traverse[List] {
+  implicit val listTraverse: Traverse[List] = new Traverse[List] {
     override def traverse[G[_] : Applicative, A, B](fa: List[A])(f: A => G[B]): G[List[B]] =
       fa.foldRight(implicitly[Applicative[G]].unit(List.empty[B])) {
         case(a, gAcc) => implicitly[Applicative[G]].map2(f(a), gAcc)((a, acc) => a +: acc)
@@ -238,6 +239,11 @@ object Traverse {
         listTraverse.traverse(fa.tail)((ta: Tree[A]) => traverse(ta)(f)))(
         (b: B, tbs: List[Tree[B]]) => Tree(b, tbs)
       )
+  }
+
+  implicit class TreeTraversableOpts[A](in: Tree[A]) {
+    def toList: List[A] = treeTraverse.toList(in)
+    def reverse: Tree[A] = treeTraverse.reverse(in)
   }
 }
 

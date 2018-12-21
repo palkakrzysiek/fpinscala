@@ -2,7 +2,7 @@ package fpinscala.applicative
 
 import org.scalatest.{FunSuite, Matchers}
 
-import scala.collection.immutable
+import org.scalacheck.Prop.forAll
 
 import Applicative._
 
@@ -27,5 +27,13 @@ class ApplicativeTest extends FunSuite with Matchers {
   test("option traverse") {
     Traverse.optionTraverse.traverse(Some(1))(i => Stream.continually(i))(streamApplicative).take(2) should be (Stream(Some(1), Some(1)))
     Traverse.optionTraverse.traverse(None)(i => Stream.continually(i))(streamApplicative).take(2) should be (Stream(None, None))
+  }
+
+  test("traverse reverse") {
+    import Traverse._
+    // TODO wirte a Tree[T] generator
+    forAll { (x: List[Int], y: List[Int]) =>
+      Tree(1, x).reverse.toList
+    }
   }
 }
