@@ -3,10 +3,7 @@ package applicative
 
 import monads.Functor
 import state._
-import State._
 import StateUtil._
-import com.sun.net.httpserver.Authenticator
-import com.sun.net.httpserver.Authenticator.Failure
 import monoids._
 
 import language.{higherKinds, implicitConversions, reflectiveCalls}
@@ -116,6 +113,13 @@ object Monad {
 
     override def flatMap[A, B](ma: Option[A])(f: A => Option[B]): Option[B] = ma.flatMap(f)
   }
+
+  type Id[A] = A
+  implicit val idMonad: Monad[Id] = new Monad[Id] {
+    override def unit[A](a: => A): Id[A] = a
+    override def flatMap[A, B](a: A)(f: A => B): B = f(a)
+  }
+
 }
 
 sealed trait Validation[+E, +A]
@@ -128,7 +132,7 @@ case class Success[A](a: A) extends Validation[Nothing, A]
 
 object Applicative {
 
-  val streamApplicative = new Applicative[Stream] {
+  implicit val streamApplicative: Applicative[Stream] = new Applicative[Stream] {
 
     def unit[A](a: => A): Stream[A] =
       Stream.continually(a) // The infinite, constant stream
@@ -175,9 +179,13 @@ trait Traverse[F[_]] extends Functor[F] with Foldable[F] {
   def sequence[G[_] : Applicative, A](fma: F[G[A]]): G[F[A]] =
     traverse(fma)(ma => ma)
 
-  def map[A, B](fa: F[A])(f: A => B): F[B] = ???
-
   import Applicative._
+  import Monad._
+
+//  def map[A, B](fa: F[A])(f: A => B): F[B] = traverse(fa)(a => Stream.continually(f(a)))(streamApplicative).head
+
+  def map[A, B](fa: F[A])(f: A => B): F[B] = traverse[Id, A, B](fa)(f)
+
 
   override def foldMap[A, B](as: F[A])(f: A => B)(mb: Monoid[B]): B =
     traverse[Applicative.Const[B, ?], A, Nothing](
@@ -224,7 +232,13 @@ object Traverse {
         implicitly[Applicative[G]].map(f(a))(b => Some(b)))
   }
 
-  lazy val treeTraverse = ???
+  lazy val treeTraverse = new Traverse[Tree] {
+    override def traverse[G[_] : Applicative, A, B](fa: Tree[A])(f: A => G[B]): G[Tree[B]] =
+      implicitly[Applicative[G]].map2(f(fa.head),
+        listTraverse.traverse(fa.tail)((ta: Tree[A]) => traverse(ta)(f)))(
+        (b: B, tbs: List[Tree[B]]) => Tree(b, tbs)
+      )
+  }
 }
 
 // The `get` and `set` functions on `State` are used above,
