@@ -57,10 +57,8 @@ trait Applicative[F[_]] extends Functor[F] {
 
       override def map2[A, B, C](fa: F[G[A]], fb: F[G[B]])(f: (A, B) => C): F[G[C]] =
         self.map2(fa, fb)((ga, gb) => G.map2(ga, gb)(f))
-
     }
   }
-
 }
 
 case class Tree[+A](head: A, tail: List[Tree[A]])
@@ -100,6 +98,10 @@ object Monad {
 
   def stateMonad[S] = new Monad[State[S, ?]] {
     def unit[A](a: => A): State[S, A] = State(s => (a, s))
+
+    // without overriding this map, applicative's map definition implemented in terms
+    // of apply thus flatMap causes stack overflow
+    override def map[A, B](st: State[S, A])(f: A => B): State[S, B] = st map f
 
     override def flatMap[A, B](st: State[S, A])(f: A => State[S, B]): State[S, B] =
       st flatMap f
@@ -208,7 +210,7 @@ trait Traverse[F[_]] extends Functor[F] with Foldable[F] {
     mapAccum(fa, 0)((a, s) => ((a, s), s + 1))._1
 
   def reverse[A](fa: F[A]): F[A] =
-    mapAccum(fa, toList(fa))((_, as) => (as.head, as.tail))._1
+    mapAccum(fa, toList(fa).reverse)((_, as) => (as.head, as.tail))._1
 
   override def foldLeft[A, B](fa: F[A])(z: B)(f: (B, A) => B): B = ???
 

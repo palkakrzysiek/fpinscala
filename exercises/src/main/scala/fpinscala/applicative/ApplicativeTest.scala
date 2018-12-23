@@ -1,12 +1,16 @@
 package fpinscala.applicative
 
 import org.scalatest.{FunSuite, Matchers}
-
-import org.scalacheck.Prop.forAll
-
+import org.scalacheck.Prop.{forAll, BooleanOperators}
 import Applicative._
+import org.scalacheck.Gen
+import org.scalacheck.Arbitrary
+import Arbitrary.arbitrary
+import org.scalatest.prop.Checkers
 
-class ApplicativeTest extends FunSuite with Matchers {
+
+
+class ApplicativeTest extends FunSuite with Matchers with Checkers {
   test("stream applicative") {
     val sequenced: Stream[List[Int]] = streamApplicative
       .sequence(List(
@@ -31,9 +35,18 @@ class ApplicativeTest extends FunSuite with Matchers {
 
   test("traverse reverse") {
     import Traverse._
-    // TODO wirte a Tree[T] generator
-    forAll { (x: List[Int], y: List[Int]) =>
-      Tree(1, x).reverse.toList
+    implicit def arbTree[T](implicit a: Arbitrary[T]): Arbitrary[Tree[T]] = Arbitrary {
+      def newTree(maxDeph: Int): Gen[Tree[T]] = for {
+        head <- a.arbitrary
+        nodesSize <- Gen.choose(0, maxDeph)
+        nodes <- Gen.listOfN(nodesSize, newTree(maxDeph - 1))
+      } yield Tree(head, nodes)
+      newTree(6)
+    }
+
+    check { (x: Tree[Int], y: Tree[Int]) => {
+      x.reverse.toList ++ y.reverse.toList == (y.toList ++ x.toList).reverse
+    }
     }
   }
 }
