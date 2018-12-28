@@ -49,4 +49,10 @@ class ApplicativeTest extends FunSuite with Matchers with Checkers {
     }
     }
   }
+
+  test("foldLeft via mapAccum") {
+    import Traverse.listTraverse
+
+    listTraverse.foldLeft(List(3,2))(6)(_ / _) should be (1)
+  }
 }
