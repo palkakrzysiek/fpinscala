@@ -37,10 +37,10 @@ trait Applicative[F[_]] extends Functor[F] {
   def factor[A, B](fa: F[A], fb: F[B]): F[(A, B)] = ???
 
   //  def product[A, B](fa: F[A], fb: F[B]): F[(A, B)] = map2(fa, fb)((_, _))
-  def product[G[_]](G: Applicative[G]): Applicative[({type f[x] = (F[x], G[x])})#f] = {
+  def product[G[_]](G: Applicative[G]): Applicative[Lambda[x => (F[x], G[x])]] = {
     val self = this
-    new Applicative[({type f[x] = (F[x], G[x])})#f] {
-      override def unit[A](a: => A) = (self.unit(a), G.unit(a))
+    new Applicative[Lambda[x => (F[x], G[x])]] {
+      override def unit[A](a: => A): (F[A], G[A]) = (self.unit(a), G.unit(a))
 
       override def map2[A, B, C](faga: (F[A], G[A]), fbgb: (F[B], G[B]))(f: (A, B) => C): (F[C], G[C]) = (faga, fbgb) match {
         case ((fa, ga), (fb, gb)) => (self.map2(fa, fb)(f), G.map2(ga, gb)(f))
@@ -108,7 +108,39 @@ object Monad {
   }
 
   def composeM[F[_], N[_]](implicit F: Monad[F], N: Monad[N], T: Traverse[N]):
-  Monad[Lambda[x => F[N[x]]]] = ???
+  Monad[Lambda[x => F[N[x]]]] = {
+    new Monad[Lambda[x => F[N[x]]]] {
+      override def unit[A](a: => A): F[N[A]] = F.unit(N.unit(a))
+
+      override def flatMap[A, B](fna: F[N[A]])(f: A => F[N[B]]): F[N[B]] = {
+        F.flatMap(fna)((na: N[A]) => N.flatMap(na)((a: A) =>
+          T.traverse(na)(a => f(a))))
+      }
+      def swapArrow[A,M[_],N[_],B](fafgb: A=>M[N[B]]): A=>N[M[B]] = fafgb.andThen(swap)
+
+      // distributive law
+      def swap[A, M[_], N[_]](mna: M[N[A]]): N[M[A]] = ???
+
+      override def flatMap[A, B](ma: F[G[A]])(f: A => F[G[B]]): F[G[B]] = self.flatMap(ma)((ga: G[A]) => swap(G.flatMap(ga)((a: A) => swapArrow(f)(a))))
+    }
+  }
+
+  /**
+    *
+  def nonKleisliCompose[G[_]](G: Monad[G]): Monad[Lambda[x => F[G[x]]]] = {
+    val self = this
+    new Monad[Lambda[x => F[G[x]]]] {
+      override def unit[A](a: => A): F[G[A]] = self.unit(G.unit(a))
+
+      def swapArrow[A,M[_],N[_],B](fafgb: A=>M[N[B]]): A=>N[M[B]] = fafgb.andThen(swap)
+
+      // distributive law
+      def swap[A, M[_], N[_]](mna: M[N[A]]): N[M[A]] = ???
+
+      override def flatMap[A, B](ma: F[G[A]])(f: A => F[G[B]]): F[G[B]] = self.flatMap(ma)((ga: G[A]) => swap(G.flatMap(ga)((a: A) => swapArrow(f)(a))))
+    }
+  }
+    */
 
   val optionMonad: Monad[Option] = new Monad[Option] {
     override def unit[A](a: => A): Option[A] = Some(a)
@@ -216,9 +248,19 @@ trait Traverse[F[_]] extends Functor[F] with Foldable[F] {
     mapAccum(fa, z)((a: A, b: B) => ((), f(b, a)))._2
 
   def fuse[G[_], H[_], A, B](fa: F[A])(f: A => G[B], g: A => H[B])
-    (implicit G: Applicative[G], H: Applicative[H]): (G[F[B]], H[F[B]]) = ???
+    (implicit G: Applicative[G], H: Applicative[H]): (G[F[B]], H[F[B]]) = {
+    implicit val GH: Applicative[Lambda[x => (G[x], H[x])]] = G.product(H)
+    traverse[Lambda[x => (G[x], H[x])], A, B](fa)(x => (f(x), g(x)))
+  }
 
-  def compose[G[_]](implicit G: Traverse[G]): Traverse[({type f[x] = F[G[x]]})#f] = ???
+
+  def compose[G[_]](implicit G: Traverse[G]): Traverse[Lambda[x => F[G[x]]]] = {
+    val self = this
+    new Traverse[Lambda[x => F[G[x]]]] {
+      override def traverse[M[_] : Applicative, A, B](fa: F[G[A]])(f: A => M[B]): M[F[G[B]]] =
+        self.traverse(fa)((ga: G[A]) => G.traverse(ga)(f))
+    }
+  }
 
 }
 
