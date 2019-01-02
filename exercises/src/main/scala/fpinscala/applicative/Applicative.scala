@@ -112,35 +112,10 @@ object Monad {
     new Monad[Lambda[x => F[N[x]]]] {
       override def unit[A](a: => A): F[N[A]] = F.unit(N.unit(a))
 
-      override def flatMap[A, B](fna: F[N[A]])(f: A => F[N[B]]): F[N[B]] = {
-        F.flatMap(fna)((na: N[A]) => N.flatMap(na)((a: A) =>
-          T.traverse(na)(a => f(a))))
-      }
-      def swapArrow[A,M[_],N[_],B](fafgb: A=>M[N[B]]): A=>N[M[B]] = fafgb.andThen(swap)
-
-      // distributive law
-      def swap[A, M[_], N[_]](mna: M[N[A]]): N[M[A]] = ???
-
-      override def flatMap[A, B](ma: F[G[A]])(f: A => F[G[B]]): F[G[B]] = self.flatMap(ma)((ga: G[A]) => swap(G.flatMap(ga)((a: A) => swapArrow(f)(a))))
+      override def flatMap[A, B](fna: F[N[A]])(f: A => F[N[B]]): F[N[B]] =
+        F.flatMap(fna)((na: N[A]) => F.map(T.traverse(na)(f))(N.join))
     }
   }
-
-  /**
-    *
-  def nonKleisliCompose[G[_]](G: Monad[G]): Monad[Lambda[x => F[G[x]]]] = {
-    val self = this
-    new Monad[Lambda[x => F[G[x]]]] {
-      override def unit[A](a: => A): F[G[A]] = self.unit(G.unit(a))
-
-      def swapArrow[A,M[_],N[_],B](fafgb: A=>M[N[B]]): A=>N[M[B]] = fafgb.andThen(swap)
-
-      // distributive law
-      def swap[A, M[_], N[_]](mna: M[N[A]]): N[M[A]] = ???
-
-      override def flatMap[A, B](ma: F[G[A]])(f: A => F[G[B]]): F[G[B]] = self.flatMap(ma)((ga: G[A]) => swap(G.flatMap(ga)((a: A) => swapArrow(f)(a))))
-    }
-  }
-    */
 
   val optionMonad: Monad[Option] = new Monad[Option] {
     override def unit[A](a: => A): Option[A] = Some(a)
