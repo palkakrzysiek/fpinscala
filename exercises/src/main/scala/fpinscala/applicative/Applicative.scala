@@ -112,8 +112,10 @@ object Monad {
     new Monad[Lambda[x => F[N[x]]]] {
       override def unit[A](a: => A): F[N[A]] = F.unit(N.unit(a))
 
-      override def flatMap[A, B](fna: F[N[A]])(f: A => F[N[B]]): F[N[B]] =
-        F.flatMap(fna)((na: N[A]) => F.map(T.traverse(na)(f))(N.join))
+      override def flatMap[A, B](fna: F[N[A]])(f: A => F[N[B]]): F[N[B]] = {
+        def traversed(na: N[A]): F[N[N[B]]] = T.traverse(na)(f)
+        F.flatMap(fna)((na: N[A]) => F.map(traversed(na))(N.join))
+      }
     }
   }
 
