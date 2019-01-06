@@ -17,7 +17,7 @@ lazy val dependencies =
   }
 
 val commonSettings = Seq(
-  scalaVersion := "2.12.1",
+  scalaVersion := "2.12.4",
   addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.8")
 )
 
