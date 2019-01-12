@@ -135,7 +135,22 @@ object STArray {
 object Immutable {
   def noop[S] = ST[S,Unit](())
 
-  def partition[S](a: STArray[S,Int], l: Int, r: Int, pivot: Int): ST[S,Int] = ???
+  def partition[S](a: STArray[S,Int], l: Int, r: Int, pivot: Int): ST[S,Int] = for {
+    pivotVal <- a.read(pivot)
+    _ <- a.swap(pivot, r)
+    j: STRef[S, Int] <- STRef(l)
+    _ <- (l until r).foldLeft(noop[S]) { (_, i) => for {
+        vi <- a.read(i)
+        _ <- if (vi < pivotVal) for {
+          vj <- j.read
+          _ <- a.swap(i, vj)
+          _ <- j.write(vj + 1)
+        } yield () else noop[S]
+      } yield ()
+    }
+    jv <- j.read
+    _ <- a.swap(jv, r)
+  } yield jv
 
   def qs[S](a: STArray[S,Int], l: Int, r: Int): ST[S, Unit] = ???
 

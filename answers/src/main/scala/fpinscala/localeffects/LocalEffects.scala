@@ -130,7 +130,7 @@ object Immutable {
   def partition[S](a: STArray[S,Int], l: Int, r: Int, pivot: Int): ST[S,Int] = for {
     vp <- a.read(pivot)
     _ <- a.swap(pivot, r)
-    j <- STRef(l)
+    j: STRef[S, Int] <- STRef(l)
     _ <- (l until r).foldLeft(noop[S])((s, i) => for {
       _ <- s
       vi <- a.read(i)
