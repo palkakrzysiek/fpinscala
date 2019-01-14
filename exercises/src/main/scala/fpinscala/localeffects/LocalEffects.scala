@@ -152,7 +152,11 @@ object Immutable {
     _ <- a.swap(jv, r)
   } yield jv
 
-  def qs[S](a: STArray[S,Int], l: Int, r: Int): ST[S, Unit] = ???
+  def qs[S](a: STArray[S,Int], l: Int, r: Int): ST[S, Unit] = if (l < r) for {
+    pi <- partition(a, l, r, (r - l) / 2)
+    _ <- qs(a, l, pi-1)
+    _ <- qs(a, pi + 1, r)
+  } yield () else noop[S]
 
   def quicksort(xs: List[Int]): List[Int] =
     if (xs.isEmpty) xs else ST.runST(new RunnableST[List[Int]] {
