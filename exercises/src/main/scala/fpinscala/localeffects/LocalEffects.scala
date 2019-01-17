@@ -2,6 +2,9 @@ package fpinscala.localeffects
 
 import fpinscala.monads._
 
+import scala.collection.mutable
+import scala.collection.immutable
+
 object Mutable {
   def quicksort(xs: List[Int]): List[Int] = if (xs.isEmpty) xs else {
     val arr = xs.toArray
@@ -170,4 +173,22 @@ object Immutable {
 }
 
 import scala.collection.mutable.HashMap
+
+sealed abstract class STMap[S, K, V] {
+  protected def mutableMap: mutable.HashMap[K, V]
+  def put(key: K, value: V) = new ST[S, Unit] {
+    override protected def run(s: S): (Unit, S) = {
+      mutableMap(key) = value
+      ((), s)
+    }
+  }
+  def read(key: K): ST[S, V] = ST(mutableMap(key))
+  def freeze: ST[S, immutable.Map[K, V]] = ST(mutableMap.toMap)
+}
+
+object STMap {
+  def empty[S, K, V](): ST[S, STMap[S, K, V]] = ST(new STMap[S, K, V] {
+    override protected def mutableMap: mutable.HashMap[K, V] = mutableMap.empty
+  })
+}
 
