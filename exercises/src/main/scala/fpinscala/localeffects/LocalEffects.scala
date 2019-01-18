@@ -141,7 +141,7 @@ object Immutable {
   def partition[S](a: STArray[S,Int], l: Int, r: Int, pivot: Int): ST[S,Int] = for {
     pivotVal <- a.read(pivot)
     _ <- a.swap(pivot, r)
-    j: STRef[S, Int] <- STRef(l)
+    j <- STRef(l)
     _ <- (l until r).foldLeft(noop[S]) { (_, i) => for {
         vi <- a.read(i)
         _ <- if (vi < pivotVal) for {
@@ -172,8 +172,6 @@ object Immutable {
   })
 }
 
-import scala.collection.mutable.HashMap
-
 sealed abstract class STMap[S, K, V] {
   protected def mutableMap: mutable.HashMap[K, V]
   def put(key: K, value: V) = new ST[S, Unit] {
@@ -182,13 +180,19 @@ sealed abstract class STMap[S, K, V] {
       ((), s)
     }
   }
-  def read(key: K): ST[S, V] = ST(mutableMap(key))
+  def read(key: K): ST[S, Option[V]] = ST(mutableMap.get(key))
+  def keys: ST[S, Set[K]] = ST(mutableMap.keySet.toSet)
   def freeze: ST[S, immutable.Map[K, V]] = ST(mutableMap.toMap)
 }
 
 object STMap {
   def empty[S, K, V](): ST[S, STMap[S, K, V]] = ST(new STMap[S, K, V] {
-    override protected def mutableMap: mutable.HashMap[K, V] = mutableMap.empty
+    override protected def mutableMap: mutable.HashMap[K, V] = mutable.HashMap.empty[K, V]
   })
-}
 
+  def fromMap[S, K, V](in: immutable.Map[K, V]) = ST(
+    new STMap[S, K, V] {
+      override protected def mutableMap: mutable.HashMap[K, V] = (mutable.HashMap.newBuilder[K, V] ++= in).result
+    }
+  )
+}
