@@ -180,6 +180,8 @@ sealed abstract class STMap[S, K, V] {
       ((), s)
     }
   }
+
+  def +=(kv: (K, V)): ST[S, Unit] = ST(mutableMap += kv)
   def read(key: K): ST[S, Option[V]] = ST(mutableMap.get(key))
   def keys: ST[S, Set[K]] = ST(mutableMap.keySet.toSet)
   def freeze: ST[S, immutable.Map[K, V]] = ST(mutableMap.toMap)
@@ -187,12 +189,12 @@ sealed abstract class STMap[S, K, V] {
 
 object STMap {
   def empty[S, K, V](): ST[S, STMap[S, K, V]] = ST(new STMap[S, K, V] {
-    override protected def mutableMap: mutable.HashMap[K, V] = mutable.HashMap.empty[K, V]
+    override protected val mutableMap: mutable.HashMap[K, V] = mutable.HashMap.empty[K, V]
   })
 
-  def fromMap[S, K, V](in: immutable.Map[K, V]) = ST(
+  def fromMap[S, K, V](in: immutable.Map[K, V]): ST[S, STMap[S, K, V]] = ST(
     new STMap[S, K, V] {
-      override protected def mutableMap: mutable.HashMap[K, V] = (mutable.HashMap.newBuilder[K, V] ++= in).result
+      override protected val mutableMap: mutable.HashMap[K, V] = (mutable.HashMap.newBuilder[K, V] ++= in).result
     }
   )
 }

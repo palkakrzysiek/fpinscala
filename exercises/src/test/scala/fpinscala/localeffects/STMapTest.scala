@@ -12,10 +12,11 @@ class STMapTest extends FunSuite with Matchers {
         map1 <- STMap.empty[S, String, Int]
         map2 <- STMap.fromMap[S, String, Int](inMap)
         keys <- map2.keys
-        _ <- keys.foldLeft(ST[S, Unit](()))((_, k) => for {
+        _ <- keys.foldLeft(ST[S, Unit](()))((s, k) => for {
+          _ <- s
           v <- map2.read(k)
           vWithDefault = v.getOrElse(0)
-          _ <- map1.put(k, vWithDefault + 1)
+          _ <- map1 += (k, vWithDefault + 1)
         } yield ())
         frozen <- map1.freeze
       } yield frozen
