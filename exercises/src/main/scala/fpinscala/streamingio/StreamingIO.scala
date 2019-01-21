@@ -116,7 +116,6 @@ object SimpleStreamTransducers {
      * can be defined for `Process[I,O]`, for instance `map`, `++` and
      * `flatMap`. The definitions are analogous.
      */
-
     def map[O2](f: O => O2): Process[I,O2] = this match {
       case Halt() => Halt()
       case Emit(h, t) => Emit(f(h), t map f)
@@ -292,13 +291,29 @@ object SimpleStreamTransducers {
     /*
      * Exercise 1: Implement `take`, `drop`, `takeWhile`, and `dropWhile`.
      */
-    def take[I](n: Int): Process[I,I] = ???
 
-    def drop[I](n: Int): Process[I,I] = ???
+    def take[I](n: Int): Process[I,I] = {
+      if (n > 0) await(i => emit(i, take(n - 1)))
+      else Halt()
+    }
 
-    def takeWhile[I](f: I => Boolean): Process[I,I] = ???
+    def drop[I](n: Int): Process[I,I] = {
+      def go(nn: Int): Process[I, I] = if (nn > 0) await(_ => go(nn - 1))
+      else id[I]
+      go(n)
+    }
 
-    def dropWhile[I](f: I => Boolean): Process[I,I] = ???
+    def takeWhile[I](f: I => Boolean): Process[I,I] =
+      await { i =>
+        if (f(i)) emit(i, takeWhile(f))
+        else Halt()
+      }
+
+    def dropWhile[I](f: I => Boolean): Process[I,I] =
+      await { i =>
+        if (f(i)) dropWhile(f)
+        else emit(i, id)
+      }
 
     /* The identity `Process`, just repeatedly echos its input. */
     def id[I]: Process[I,I] = lift(identity)
