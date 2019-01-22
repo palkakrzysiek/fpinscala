@@ -24,5 +24,13 @@ class SimpleStreamTransducersTest extends FunSuite with Matchers {
     dropWhile((i: Int) => i <= 3)(Stream(1,2,3,4,5)).toList should be (List(4,5))
     dropWhile((i: Int) => i <= 3)(Stream(4,5)).toList should be (List(4,5))
     dropWhile((i: Int) => i <= 3)(Stream(1,2,3)).toList should be (List.empty)
+     }
+
+  test("count") {
+    count(Stream("a", "b", "c")).toList should be (List(0, 1, 2))
+  }
+
+  test("mean") {
+    mean(Stream(1, 3, 5)).toList should be (List(1, 2, 3))
   }
 }
