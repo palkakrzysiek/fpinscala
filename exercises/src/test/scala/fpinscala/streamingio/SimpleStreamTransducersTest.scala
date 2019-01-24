@@ -33,4 +33,18 @@ class SimpleStreamTransducersTest extends FunSuite with Matchers {
   test("mean") {
     mean(Stream(1, 3, 5)).toList should be (List(1, 2, 3))
   }
+
+  test("sum2") {
+    sum2(Stream(1,2,3)).toList should be (List(1,3,6))
+  }
+
+  test("count3") {
+    count3(Stream("", "", "")).toList should be (List(1, 2, 3))
+  }
+
+  test("++") {
+    val p1 = liftOne((i: Int) => i * 2).repeatN(2)
+    val p2 = liftOne((i: Int) => i * 3).repeatN(2)
+    (p1 ++ p2)(Stream.fill(7)(1)).toList should be (List(2,2,2,3,3,3))
+  }
 }

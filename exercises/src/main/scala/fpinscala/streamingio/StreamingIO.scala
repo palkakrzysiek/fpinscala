@@ -135,7 +135,15 @@ object SimpleStreamTransducers {
     /*
      * Exercise 5: Implement `|>`. Let the types guide your implementation.
      */
+//    def |>[O2](p2: Process[O,O2]): Process[I,O2] = (this, p2) match {
+//      case (Halt(), _) => Halt()
+//      case (_, Halt()) => Halt()
+//      case (Emit(h: O, t: Process[I, O]), Await(recv: (Option[O] => Process[O, O2]))) => recv(Some(h))
+//      case (Emit(h1, t1), Emit(h2, t2)) => ???
+//    }
+
     def |>[O2](p2: Process[O,O2]): Process[I,O2] = ???
+
 
     /*
      * Feed `in` to this `Process`. Uses a tail recursive loop as long
@@ -345,9 +353,9 @@ object SimpleStreamTransducers {
 
     /* Exercise 4: Implement `sum` and `count` in terms of `loop` */
 
-    def sum2: Process[Double,Double] = ???
+    def sum2: Process[Double,Double] = loop(0.0)((d: Double, acc: Double) => (d + acc, d + acc))
 
-    def count3[I]: Process[I,Int] = ???
+    def count3[I]: Process[I,Int] = loop(0)((_, count) => (count + 1, count + 1))
 
     /*
      * Exercise 7: Can you think of a generic combinator that would
