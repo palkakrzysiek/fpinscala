@@ -47,4 +47,28 @@ class SimpleStreamTransducersTest extends FunSuite with Matchers {
     val p2 = liftOne((i: Int) => i * 3).repeatN(2)
     (p1 ++ p2)(Stream.fill(7)(1)).toList should be (List(2,2,2,3,3,3))
   }
+
+  val toStr: SimpleStreamTransducers.Process[Any, String] = lift((i: Any) => i.toString)
+
+  test("Halt |> Emit") {
+    (Halt() |> Emit(1))(Stream()).toList should be (List(1))
+  }
+
+  test("Emit |> Emit") {
+    (emit[Int, Int](1) |> emit[Int, Int](2))(Stream()).toList should be (List(2))
+  }
+
+  test("Halt |> Await") {
+    (Halt() |> toStr)(Stream(1)).toList should be (List())
+  }
+
+  test("Emit |> Await") {
+    (emit[Int, Int](1) |> toStr)(Stream(2)).toList should be (List("1"))
+  }
+
+  test("|>") {
+    val p1 = lift((s: String) => s.toInt)
+    val p2 = lift((i: Int) => i * 2)
+    (p1 |> p2)(Stream("1", "2", "3")).toList should be (List(2, 4, 6))
+  }
 }

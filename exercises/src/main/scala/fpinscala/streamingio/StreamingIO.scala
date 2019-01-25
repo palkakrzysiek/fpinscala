@@ -132,17 +132,15 @@ object SimpleStreamTransducers {
       case Await(recv) => Await(recv andThen (_ flatMap f))
     }
 
-    /*
-     * Exercise 5: Implement `|>`. Let the types guide your implementation.
-     */
-//    def |>[O2](p2: Process[O,O2]): Process[I,O2] = (this, p2) match {
-//      case (Halt(), _) => Halt()
-//      case (_, Halt()) => Halt()
-//      case (Emit(h: O, t: Process[I, O]), Await(recv: (Option[O] => Process[O, O2]))) => recv(Some(h))
-//      case (Emit(h1, t1), Emit(h2, t2)) => ???
-//    }
-
-    def |>[O2](p2: Process[O,O2]): Process[I,O2] = ???
+    def |>[OO >: O, O2](p2: Process[OO,O2]): Process[I,O2] = p2 match {
+      case Emit(h, t) => Emit(h, this |> t)
+      case Halt() => Halt()
+      case Await(recv) => this match {
+        case Halt() => this |> recv(None)
+        case Emit(h: O, t: Process[I, O]) => t |> recv(Some(h))
+        case Await(recvI) => Await((i: Option[I]) => recvI(i) |> p2)
+      }
+    }
 
 
     /*
